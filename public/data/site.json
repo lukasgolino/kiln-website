@@ -52,8 +52,8 @@
      "rim": 0.0
     },
     "gold": {
-     "roughness": 0.3,
-     "metallic": 1.0,
+     "roughness": 0.45,
+     "metallic": 0.5,
      "emission": 0.0,
      "rim": 0.0
     },
@@ -70,8 +70,8 @@
      "rim": 0.0
     },
     "metal": {
-     "roughness": 0.35,
-     "metallic": 0.8,
+     "roughness": 0.55,
+     "metallic": 0.35,
      "emission": 0.0,
      "rim": 0.0
     },
@@ -94,7 +94,7 @@
      "rim": 0.0
     },
     "skin": {
-     "roughness": 0.55,
+     "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
      "rim": 0.2
@@ -166,7 +166,7 @@
     },
     "gold": {
      "roughness": 0.45,
-     "metallic": 0.8,
+     "metallic": 0.5,
      "emission": 0.0,
      "rim": 0.0
     },
@@ -278,8 +278,8 @@
      "rim": 0.0
     },
     "gold": {
-     "roughness": 0.3,
-     "metallic": 1.0,
+     "roughness": 0.45,
+     "metallic": 0.5,
      "emission": 0.0,
      "rim": 0.0
     },
@@ -296,8 +296,8 @@
      "rim": 0.0
     },
     "metal": {
-     "roughness": 0.35,
-     "metallic": 0.8,
+     "roughness": 0.55,
+     "metallic": 0.35,
      "emission": 0.0,
      "rim": 0.0
     },
@@ -320,7 +320,7 @@
      "rim": 0.0
     },
     "skin": {
-     "roughness": 0.55,
+     "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
      "rim": 0.2
@@ -343,9 +343,9 @@
  "models": {
   "archer": {
    "triangles": {
-    "soft_toy": 8000,
-    "low_poly": 898,
-    "toon": 8000
+    "soft_toy": 7876,
+    "low_poly": 864,
+    "toon": 7876
    },
    "description": "hooded bean archer with a longbow",
    "cls": "character",
@@ -368,9 +368,9 @@
   },
   "barrel": {
    "triangles": {
-    "soft_toy": 3000,
-    "low_poly": 726,
-    "toon": 3000
+    "soft_toy": 2926,
+    "low_poly": 368,
+    "toon": 2926
    },
    "description": "wooden barrel with iron hoops",
    "cls": "prop",
@@ -382,9 +382,9 @@
   },
   "knight": {
    "triangles": {
-    "soft_toy": 8000,
-    "low_poly": 1584,
-    "toon": 8000
+    "soft_toy": 7650,
+    "low_poly": 795,
+    "toon": 7650
    },
    "description": "bean knight with a bucket helm, sword and round shield",
    "cls": "character",
@@ -407,9 +407,9 @@
   },
   "passenger": {
    "triangles": {
-    "soft_toy": 8000,
-    "low_poly": 918,
-    "toon": 8000
+    "soft_toy": 7820,
+    "low_poly": 832,
+    "toon": 7820
    },
    "description": "big-headed caricature passenger in a holiday shirt",
    "cls": "character",
@@ -432,9 +432,9 @@
   },
   "pilot": {
    "triangles": {
-    "soft_toy": 7642,
-    "low_poly": 1152,
-    "toon": 7642
+    "soft_toy": 8006,
+    "low_poly": 946,
+    "toon": 8006
    },
    "description": "bean crew member in a pilot's cap with the airline's wings",
    "cls": "character",
@@ -464,9 +464,9 @@
   },
   "seat": {
    "triangles": {
-    "soft_toy": 3000,
-    "low_poly": 416,
-    "toon": 3000
+    "soft_toy": 2962,
+    "low_poly": 370,
+    "toon": 2962
    },
    "description": "airline seat",
    "cls": "prop",
@@ -478,9 +478,9 @@
   },
   "trebuchet": {
    "triangles": {
-    "soft_toy": 14000,
-    "low_poly": 2000,
-    "toon": 14000
+    "soft_toy": 13872,
+    "low_poly": 1894,
+    "toon": 13872
    },
    "description": "siege trebuchet on wheels; the arm swings to throw",
    "cls": "machine",
@@ -498,9 +498,9 @@
   },
   "tree": {
    "triangles": {
-    "soft_toy": 6000,
-    "low_poly": 500,
-    "toon": 6000
+    "soft_toy": 5992,
+    "low_poly": 494,
+    "toon": 5992
    },
    "description": "round toy tree",
    "cls": "nature",
@@ -512,9 +512,9 @@
   },
   "wall": {
    "triangles": {
-    "soft_toy": 20000,
-    "low_poly": 2500,
-    "toon": 20000
+    "soft_toy": 19946,
+    "low_poly": 2476,
+    "toon": 19946
    },
    "description": "castle wall segment, 4 m, with merlons and an arrow slit",
    "cls": "building",
@@ -545,5 +545,5 @@
   },
   "diff": "--- archer.kiln.yaml\n+++ archer.kiln.yaml\n@@ -4,6 +4,6 @@\n tags: [siege, soldier]\n-status: draft\n+status: approved\n style_version: 1\n parts:\n-  - torus: { at: [0.72, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n+  - torus: { at: [0.5, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n     id: arm_l\n@@ -11,5 +11,5 @@\n     material: wood\n-  - box: { at: [0.72, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n+  - box: { at: [0.5, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n     cut: true\n-  - capsule: { from: [0.72, 0.2, 0.05], to: [0.72, 0.9, 0.05], radius: 0.012 }\n+  - capsule: { from: [0.5, 0.2, 0.05], to: [0.5, 0.9, 0.05], radius: 0.012 }\n     id: arm_l"
  },
- "kiln": "0.2.0"
+ "kiln": "0.3.0"
 }
