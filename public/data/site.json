@@ -343,9 +343,9 @@
  "models": {
   "archer": {
    "triangles": {
-    "soft_toy": 7678,
-    "low_poly": 944,
-    "toon": 7678
+    "soft_toy": 8000,
+    "low_poly": 898,
+    "toon": 8000
    },
    "description": "hooded bean archer with a longbow",
    "cls": "character",
@@ -368,9 +368,9 @@
   },
   "barrel": {
    "triangles": {
-    "soft_toy": 2934,
-    "low_poly": 404,
-    "toon": 2934
+    "soft_toy": 3000,
+    "low_poly": 726,
+    "toon": 3000
    },
    "description": "wooden barrel with iron hoops",
    "cls": "prop",
@@ -382,9 +382,9 @@
   },
   "knight": {
    "triangles": {
-    "soft_toy": 10744,
-    "low_poly": 8183,
-    "toon": 10744
+    "soft_toy": 8000,
+    "low_poly": 1584,
+    "toon": 8000
    },
    "description": "bean knight with a bucket helm, sword and round shield",
    "cls": "character",
@@ -407,9 +407,9 @@
   },
   "passenger": {
    "triangles": {
-    "soft_toy": 8826,
-    "low_poly": 5264,
-    "toon": 8826
+    "soft_toy": 8000,
+    "low_poly": 918,
+    "toon": 8000
    },
    "description": "big-headed caricature passenger in a holiday shirt",
    "cls": "character",
@@ -432,13 +432,13 @@
   },
   "pilot": {
    "triangles": {
-    "soft_toy": 7918,
-    "low_poly": 920,
-    "toon": 7918
+    "soft_toy": 7642,
+    "low_poly": 1152,
+    "toon": 7642
    },
    "description": "bean crew member in a pilot's cap with the airline's wings",
    "cls": "character",
-   "height": 1.16,
+   "height": 1.15,
    "parts": 6,
    "animations": {
     "idle": {
@@ -464,9 +464,9 @@
   },
   "seat": {
    "triangles": {
-    "soft_toy": 2902,
-    "low_poly": 396,
-    "toon": 2902
+    "soft_toy": 3000,
+    "low_poly": 416,
+    "toon": 3000
    },
    "description": "airline seat",
    "cls": "prop",
@@ -478,9 +478,9 @@
   },
   "trebuchet": {
    "triangles": {
-    "soft_toy": 13498,
+    "soft_toy": 14000,
     "low_poly": 2000,
-    "toon": 13498
+    "toon": 14000
    },
    "description": "siege trebuchet on wheels; the arm swings to throw",
    "cls": "machine",
@@ -498,9 +498,9 @@
   },
   "tree": {
    "triangles": {
-    "soft_toy": 6102,
-    "low_poly": 470,
-    "toon": 6102
+    "soft_toy": 6000,
+    "low_poly": 500,
+    "toon": 6000
    },
    "description": "round toy tree",
    "cls": "nature",
@@ -512,9 +512,9 @@
   },
   "wall": {
    "triangles": {
-    "soft_toy": 20562,
-    "low_poly": 2388,
-    "toon": 20562
+    "soft_toy": 20000,
+    "low_poly": 2500,
+    "toon": 20000
    },
    "description": "castle wall segment, 4 m, with merlons and an arrow slit",
    "cls": "building",
@@ -545,5 +545,5 @@
   },
   "diff": "--- archer.kiln.yaml\n+++ archer.kiln.yaml\n@@ -4,6 +4,6 @@\n tags: [siege, soldier]\n-status: draft\n+status: approved\n style_version: 1\n parts:\n-  - torus: { at: [0.72, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n+  - torus: { at: [0.5, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n     id: arm_l\n@@ -11,5 +11,5 @@\n     material: wood\n-  - box: { at: [0.72, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n+  - box: { at: [0.5, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n     cut: true\n-  - capsule: { from: [0.72, 0.2, 0.05], to: [0.72, 0.9, 0.05], radius: 0.012 }\n+  - capsule: { from: [0.5, 0.2, 0.05], to: [0.5, 0.9, 0.05], radius: 0.012 }\n     id: arm_l"
  },
- "kiln": "0.1.0"
+ "kiln": "0.2.0"
 }
