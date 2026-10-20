@@ -1,0 +1,549 @@
+{
+ "styles": {
+  "soft_toy": {
+   "description": "Soft toys: smooth rounded shapes, saturated flat colours, soft light, no outlines (Dear Passengers, Fall Guys)",
+   "smooth": true,
+   "look": {
+    "shader": "standard",
+    "toon_bands": 3,
+    "outline": 0.0,
+    "outline_color": "#1a1420",
+    "tonemapper": "filmic",
+    "exposure": 1.0,
+    "saturation": 1.15,
+    "contrast": 1.0,
+    "ssao": true,
+    "glow": true,
+    "ambient": 0.9,
+    "sky_top": "#4f8fe0",
+    "sky_horizon": "#bcd7f2",
+    "ground": "#a9c48f",
+    "sun_pitch": -48.0,
+    "sun_yaw": 30.0,
+    "sun_energy": 1.1,
+    "sun_color": "#fff6e8",
+    "shadows": true,
+    "fog": 0.0,
+    "fog_color": "#c8d8e8"
+   },
+   "materials": {
+    "default": {
+     "roughness": 0.5,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "fabric": {
+     "roughness": 0.85,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glass": {
+     "roughness": 0.1,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glow": {
+     "roughness": 0.5,
+     "metallic": 0.0,
+     "emission": 2.0,
+     "rim": 0.0
+    },
+    "gold": {
+     "roughness": 0.3,
+     "metallic": 1.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leaf": {
+     "roughness": 0.8,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leather": {
+     "roughness": 0.7,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "metal": {
+     "roughness": 0.35,
+     "metallic": 0.8,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "paint": {
+     "roughness": 0.55,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "plastic": {
+     "roughness": 0.42,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "rubber": {
+     "roughness": 0.75,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "skin": {
+     "roughness": 0.55,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.2
+    },
+    "stone": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "wood": {
+     "roughness": 0.75,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    }
+   }
+  },
+  "low_poly": {
+   "description": "Low poly: faceted flat-shaded shapes, few triangles, flat colours (Kenney, Monument Valley)",
+   "smooth": false,
+   "look": {
+    "shader": "standard",
+    "toon_bands": 3,
+    "outline": 0.0,
+    "outline_color": "#1a1420",
+    "tonemapper": "filmic",
+    "exposure": 1.0,
+    "saturation": 1.1,
+    "contrast": 1.0,
+    "ssao": true,
+    "glow": false,
+    "ambient": 0.85,
+    "sky_top": "#5aa0e8",
+    "sky_horizon": "#cfe3f5",
+    "ground": "#9fbf7a",
+    "sun_pitch": -52.0,
+    "sun_yaw": 35.0,
+    "sun_energy": 1.2,
+    "sun_color": "#fff6e8",
+    "shadows": true,
+    "fog": 0.0,
+    "fog_color": "#c8d8e8"
+   },
+   "materials": {
+    "default": {
+     "roughness": 0.85,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "fabric": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glass": {
+     "roughness": 0.3,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glow": {
+     "roughness": 0.8,
+     "metallic": 0.0,
+     "emission": 1.5,
+     "rim": 0.0
+    },
+    "gold": {
+     "roughness": 0.45,
+     "metallic": 0.8,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leaf": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leather": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "metal": {
+     "roughness": 0.5,
+     "metallic": 0.5,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "paint": {
+     "roughness": 0.85,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "plastic": {
+     "roughness": 0.8,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "rubber": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "skin": {
+     "roughness": 0.8,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "stone": {
+     "roughness": 0.95,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "wood": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    }
+   }
+  },
+  "toon": {
+   "description": "Toon: cel-shaded bands and dark outlines on smooth shapes (Wind Waker, Sable-lite)",
+   "smooth": true,
+   "look": {
+    "shader": "toon",
+    "toon_bands": 3,
+    "outline": 0.012,
+    "outline_color": "#1a1420",
+    "tonemapper": "linear",
+    "exposure": 1.0,
+    "saturation": 1.05,
+    "contrast": 1.0,
+    "ssao": false,
+    "glow": false,
+    "ambient": 0.55,
+    "sky_top": "#4f8fe0",
+    "sky_horizon": "#bcd7f2",
+    "ground": "#a9c48f",
+    "sun_pitch": -48.0,
+    "sun_yaw": 30.0,
+    "sun_energy": 1.1,
+    "sun_color": "#fff6e8",
+    "shadows": true,
+    "fog": 0.0,
+    "fog_color": "#c8d8e8"
+   },
+   "materials": {
+    "default": {
+     "roughness": 0.5,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "fabric": {
+     "roughness": 0.85,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glass": {
+     "roughness": 0.1,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "glow": {
+     "roughness": 0.5,
+     "metallic": 0.0,
+     "emission": 2.0,
+     "rim": 0.0
+    },
+    "gold": {
+     "roughness": 0.3,
+     "metallic": 1.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leaf": {
+     "roughness": 0.8,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "leather": {
+     "roughness": 0.7,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "metal": {
+     "roughness": 0.35,
+     "metallic": 0.8,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "paint": {
+     "roughness": 0.55,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "plastic": {
+     "roughness": 0.42,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "rubber": {
+     "roughness": 0.75,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "skin": {
+     "roughness": 0.55,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.2
+    },
+    "stone": {
+     "roughness": 0.9,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    },
+    "wood": {
+     "roughness": 0.75,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0
+    }
+   }
+  }
+ },
+ "models": {
+  "archer": {
+   "triangles": {
+    "soft_toy": 7678,
+    "low_poly": 944,
+    "toon": 7678
+   },
+   "description": "hooded bean archer with a longbow",
+   "cls": "character",
+   "height": 1.3,
+   "parts": 5,
+   "animations": {
+    "hop": {
+     "loop": true,
+     "fps": 12.0,
+     "gltf": "hop-loop"
+    },
+    "walk": {
+     "loop": true,
+     "fps": 12.0,
+     "gltf": "walk-loop"
+    }
+   },
+   "variants": [],
+   "source_lines": 64
+  },
+  "barrel": {
+   "triangles": {
+    "soft_toy": 2934,
+    "low_poly": 404,
+    "toon": 2934
+   },
+   "description": "wooden barrel with iron hoops",
+   "cls": "prop",
+   "height": 0.79,
+   "parts": 1,
+   "animations": {},
+   "variants": [],
+   "source_lines": 19
+  },
+  "knight": {
+   "triangles": {
+    "soft_toy": 10744,
+    "low_poly": 8183,
+    "toon": 10744
+   },
+   "description": "bean knight with a bucket helm, sword and round shield",
+   "cls": "character",
+   "height": 1.4,
+   "parts": 6,
+   "animations": {
+    "attack": {
+     "loop": false,
+     "fps": 10.0,
+     "gltf": "attack"
+    },
+    "walk": {
+     "loop": true,
+     "fps": 12.0,
+     "gltf": "walk-loop"
+    }
+   },
+   "variants": [],
+   "source_lines": 81
+  },
+  "passenger": {
+   "triangles": {
+    "soft_toy": 8826,
+    "low_poly": 5264,
+    "toon": 8826
+   },
+   "description": "big-headed caricature passenger in a holiday shirt",
+   "cls": "character",
+   "height": 1.32,
+   "parts": 6,
+   "animations": {
+    "nod": {
+     "loop": true,
+     "fps": 8.0,
+     "gltf": "nod-loop"
+    },
+    "walk": {
+     "loop": true,
+     "fps": 12.0,
+     "gltf": "walk-loop"
+    }
+   },
+   "variants": [],
+   "source_lines": 71
+  },
+  "pilot": {
+   "triangles": {
+    "soft_toy": 7918,
+    "low_poly": 920,
+    "toon": 7918
+   },
+   "description": "bean crew member in a pilot's cap with the airline's wings",
+   "cls": "character",
+   "height": 1.16,
+   "parts": 6,
+   "animations": {
+    "idle": {
+     "loop": true,
+     "fps": 6.0,
+     "gltf": "idle-loop"
+    },
+    "walk": {
+     "loop": true,
+     "fps": 12.0,
+     "gltf": "walk-loop"
+    },
+    "wave": {
+     "loop": true,
+     "fps": 8.0,
+     "gltf": "wave-loop"
+    }
+   },
+   "variants": [
+    "copilot"
+   ],
+   "source_lines": 56
+  },
+  "seat": {
+   "triangles": {
+    "soft_toy": 2902,
+    "low_poly": 396,
+    "toon": 2902
+   },
+   "description": "airline seat",
+   "cls": "prop",
+   "height": 1.06,
+   "parts": 1,
+   "animations": {},
+   "variants": [],
+   "source_lines": 29
+  },
+  "trebuchet": {
+   "triangles": {
+    "soft_toy": 13498,
+    "low_poly": 2000,
+    "toon": 13498
+   },
+   "description": "siege trebuchet on wheels; the arm swings to throw",
+   "cls": "machine",
+   "height": 3.24,
+   "parts": 2,
+   "animations": {
+    "fire": {
+     "loop": false,
+     "fps": 12.0,
+     "gltf": "fire"
+    }
+   },
+   "variants": [],
+   "source_lines": 70
+  },
+  "tree": {
+   "triangles": {
+    "soft_toy": 6102,
+    "low_poly": 470,
+    "toon": 6102
+   },
+   "description": "round toy tree",
+   "cls": "nature",
+   "height": 2.46,
+   "parts": 1,
+   "animations": {},
+   "variants": [],
+   "source_lines": 32
+  },
+  "wall": {
+   "triangles": {
+    "soft_toy": 20562,
+    "low_poly": 2388,
+    "toon": 20562
+   },
+   "description": "castle wall segment, 4 m, with merlons and an arrow slit",
+   "cls": "building",
+   "height": 3.31,
+   "parts": 1,
+   "animations": {},
+   "variants": [],
+   "source_lines": 22
+  }
+ },
+ "lint": {
+  "before": {
+   "findings": [
+    {
+     "rule": "W103",
+     "severity": "warning",
+     "message": "the model is 2 separate pieces: a floating part, or a gap between parts that should touch",
+     "path": "models/archer.kiln.yaml",
+     "line": null,
+     "where": ""
+    }
+   ],
+   "warnings": 1
+  },
+  "after": {
+   "warnings": 0,
+   "errors": 0
+  },
+  "diff": "--- archer.kiln.yaml\n+++ archer.kiln.yaml\n@@ -4,6 +4,6 @@\n tags: [siege, soldier]\n-status: draft\n+status: approved\n style_version: 1\n parts:\n-  - torus: { at: [0.72, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n+  - torus: { at: [0.5, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n     id: arm_l\n@@ -11,5 +11,5 @@\n     material: wood\n-  - box: { at: [0.72, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n+  - box: { at: [0.5, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n     cut: true\n-  - capsule: { from: [0.72, 0.2, 0.05], to: [0.72, 0.9, 0.05], radius: 0.012 }\n+  - capsule: { from: [0.5, 0.2, 0.05], to: [0.5, 0.9, 0.05], radius: 0.012 }\n     id: arm_l"
+ },
+ "kiln": "0.1.0"
+}

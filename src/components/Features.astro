@@ -1,0 +1,260 @@
+---
+import { asset, site } from "../lib/data";
+import { highlightDiff, highlightSource } from "../scripts/highlight";
+
+const data = site();
+const lint = data.lint;
+const finding = lint.before.findings[0];
+const fixDiff = lint.diff.split("\n").filter((l: string) => !l.startsWith("---") && !l.startsWith("+++")).join("\n");
+const clay = `parts:
+  - capsule: { from: [0, 0.32, 0], to: [0, 0.74, 0], radius: 0.3 }
+    color: red                      # a palette name
+  - capsule: { from: [0.3, 0.6, 0], to: [0.42, 0.38, 0.08], radius: 0.08 }
+    id: arm_l
+    mirror: x                       # write the left one...
+    mirror_id: arm_r                # ...the right is its own part
+    blend: 0.04                     # melts into the body, like clay
+  - box: { at: [0, 0.56, 0.29], size: [0.09, 0.22, 0.05], round: 0.015 }
+    pattern: { type: stripes, color: gold, size: 0.06, axis: y }
+  - cylinder: { at: [0, 0.81, 0], radius: 0.26, height: 0.04 }
+    cut: true                       # holes and openings`;
+const rig = `rig:
+  arm: { pivot: [0, 1.78, 0], meta: { fires: true } }
+skin: rigid                  # or soft: one mesh that bends
+animations:
+  fire:
+    fps: 12
+    loop: false
+    poses:
+      - {}
+      - { arm: { rotate: [35, 0, 0] } }
+      - { arm: { rotate: [80, 0, 0] } }
+      - { arm: { rotate: [120, 0, 0] } }
+  # or a cycle: walk, waddle, hop, bob, spin,
+  # swing, breathe, wave, chain`;
+const pilot = data.models.pilot;
+const manifest = JSON.stringify(
+  {
+    pilot: {
+      glb: "models/pilot.glb",
+      scene: "models/pilot.tscn",
+      height: pilot.height,
+      triangles: pilot.triangles.soft_toy,
+      parts: { cap: { pivot: [0, 1, 0], meta: { detachable: true } }, "…": `${pilot.parts - 1} more` },
+      animations: { walk: { loop: true, fps: 12 }, "…": `${Object.keys(pilot.animations).length - 1} more` },
+      variants: pilot.variants,
+    },
+  },
+  null,
+  1,
+).replace(/\[\n\s*([^\[\]{}]*?)\n\s*\]/g, (_, s: string) => `[${s.replace(/\s*\n\s*/g, " ")}]`);
+const gd = `add_child(load("res://assets/kiln/looks/soft_toy.tscn").instantiate())  # once per scene
+var pilot = load("res://assets/kiln/models/pilot.tscn").instantiate()
+add_child(pilot)
+pilot.get_node("AnimationPlayer").play("wave")`;
+---
+
+<section id="features">
+  <div class="wrap">
+    <span class="eyebrow">Why KILN</span>
+    <h2>Built for a whole game's worth of models</h2>
+    <p class="lede">
+      Every picture below is KILN's own output, from the demo project in this site's repository: its previews,
+      its lint, its build.
+    </p>
+
+    <div class="cards">
+      <article class="card wide">
+        <div class="text">
+          <h3><span>1</span> Shapes that blend like clay</h3>
+          <p>
+            Eleven primitives (spheres, capsules, rounded boxes, cylinders, cones, tori, tubes, lathes, extrusions,
+            wedges) that join smoothly where you ask, cut each other, mirror and repeat in rows and rings. Colours
+            are palette names; stripes, bands, dots and checks have clean edges; PAGAN images go on as decals.
+          </p>
+          <p class="dim">Text the agent writes and you can read, diff and review in a pull request.</p>
+        </div>
+        <pre class="code"><code set:html={highlightSource(clay)} /></pre>
+      </article>
+
+      <article class="card">
+        <h3><span>2</span> It looks at its own work</h3>
+        <p>
+          Previews render on any machine, no GPU or display: a turntable from 8 sides and 3 heights, close-ups of
+          any part, animation filmstrips, a line-up at one scale. The skill tells the agent to look before it
+          reports, because nobody judges proportions blind.
+        </p>
+        <a href={asset("img/knight-turntable.png")}><img src={asset("img/knight-turntable.png")} alt="KILN's turntable of the knight: 8 sides from below, eye level and above" loading="lazy" /></a>
+      </article>
+
+      <article class="card">
+        <h3><span>3</span> It checks its own work</h3>
+        <p>A linter for 3D: floating pieces, parts too thin to mesh, models off the ground, wrong size for the class, blown triangle budgets. A real one, from the archer's first draft:</p>
+        <p class="find"><b>{finding.rule}</b> {finding.message}</p>
+        <div class="pair">
+          <figure><img src={asset("img/archer-before.png")} alt="The archer's first draft: the bow floats beside the hand" loading="lazy" /><figcaption>draft</figcaption></figure>
+          <figure><img src={asset("img/archer-after.png")} alt="Fixed: the bow is in the archer's hand" loading="lazy" /><figcaption>fixed: {lint.after.warnings} warnings</figcaption></figure>
+        </div>
+        <pre class="code small"><code set:html={highlightDiff(fixDiff)} /></pre>
+      </article>
+
+      <article class="card wide">
+        <div class="text">
+          <h3><span>4</span> Rigs and animation</h3>
+          <p>
+            Give a part an id and a pivot and it moves. Rigid skins for machines and props; soft skins for
+            creatures, one mesh that bends where its parts blend. Write poses frame by frame, or let a cycle write
+            them. Gameplay data rides along: <code>meta: {"{"} hitzone: head {"}"}</code> becomes node metadata in
+            the engine.
+          </p>
+          <pre class="code"><code set:html={highlightSource(rig)} /></pre>
+        </div>
+        <img src={asset("img/trebuchet-fire.png")} alt="KILN's filmstrip of the trebuchet's fire animation, front and side" loading="lazy" />
+      </article>
+
+      <article class="card wide">
+        <div class="text">
+          <h3><span>5</span> Game-ready output</h3>
+          <p>
+            <code>kiln build</code> writes binary glTF (.glb) with parts, skins, animations, variants and LODs,
+            within the style's triangle budget. For Godot: a scene per model with the style's materials (toon
+            bands, outlines, rim light) and a look kit per style (sky, sun, tonemapper, SSAO, glow). <code>kiln
+            build --verify-godot</code> loads it all in headless Godot. <code>manifest.json</code> is the contract
+            for any engine.
+          </p>
+          <pre class="code"><code set:html={highlightSource(gd)} /></pre>
+        </div>
+        <div>
+          <img src={asset("img/godot-showcase.png")} alt="The demo models running in Godot 4 with the soft_toy look kit" loading="lazy" />
+          <pre class="code small"><code>{manifest}</code></pre>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3><span>6</span> Everything at one scale</h3>
+        <p>
+          Models are written in metres. <code>kiln lineup</code> stands them on one ground line beside a 1 m bar,
+          so a 1.2 m bean doesn't end up taller than the door. Lint W108 flags sizes that don't fit their class.
+        </p>
+        <img src={asset("img/lineup.png")} alt="KILN's line-up: pilot, passenger, knight, archer, barrel, seat and tree at one scale" loading="lazy" />
+      </article>
+
+      <article class="card">
+        <h3><span>7</span> Free asset packs, in your style</h3>
+        <p>
+          Text is bad at dense foliage and realistic rocks. For those, bring in CC0 packs (Kenney, KayKit,
+          Quaternius): KILN scales them, stands them on the ground, snaps their colours to your palette and gives
+          them your style's materials, so they match. <code>CREDITS.md</code> writes itself.
+        </p>
+        <pre class="code"><code><span class="t-punc">$</span> kiln import rock.glb --licence CC0-1.0 \
+    --author Kenney --height 1.5</code></pre>
+        <p class="dim">Licences that forbid it (NC, ND, "no AI") are refused by the skill.</p>
+      </article>
+
+      <article class="card">
+        <h3><span>8</span> A project that remembers</h3>
+        <p>
+          <code>BRIEF.md</code> (what the game needs, every decision) and <code>STYLE.md</code> (how it looks)
+          are the agent's memory between sessions. Models carry a status and a style version; <code>kiln style
+          bump</code> flags older models for review, and <code>kiln status</code> lists what's left.
+        </p>
+      </article>
+
+      <article class="card">
+        <h3><span>9</span> Built for agents</h3>
+        <p>
+          A Claude skill that teaches the workflow, an MCP server (20 tools, previews come back as images) for any
+          agent, <code>--json</code> on every command, and <code>kiln.api</code> for generator scripts: walls with
+          merlons, fences, stairs, forests, crowds.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 40px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    min-width: 0;
+  }
+  .card.wide {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 28px;
+    align-items: start;
+  }
+  h3 span {
+    display: inline-grid;
+    place-items: center;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 50%;
+    background: var(--clay);
+    color: var(--ink);
+    font-size: 0.85em;
+    margin-right: 6px;
+  }
+  .card p {
+    color: var(--muted);
+  }
+  .dim {
+    font-size: 0.92rem;
+  }
+  .card img {
+    display: block;
+    border-radius: 8px;
+    margin-top: 6px;
+  }
+  .card .code {
+    font-size: 12.5px;
+  }
+  .code.small {
+    font-size: 11.5px;
+    margin-top: 12px;
+  }
+  .find {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text) !important;
+    background: var(--ink);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--glow);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .find b {
+    color: var(--glow);
+  }
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .pair figure {
+    margin: 0;
+    background: linear-gradient(#bcd7f2, #e9f1f8);
+    border-radius: 8px;
+  }
+  .pair figcaption {
+    font-size: 0.8rem;
+    color: #3a2c25;
+    text-align: center;
+    padding-bottom: 6px;
+  }
+  @media (max-width: 900px) {
+    .cards,
+    .card.wide {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

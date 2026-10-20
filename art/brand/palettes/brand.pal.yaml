@@ -1,0 +1,8 @@
+name: brand
+# The site's colours (src/styles/global.css uses the same hexes).
+colors:
+  "0": { hex: "#1b1310", name: black }
+  "1": { hex: "#fff4e4", name: cream }
+  "2": { hex: "#e0673c", name: clay }
+  "3": { hex: "#b44a2a", name: fired }
+  "4": { hex: "#ffb347", name: glow }

@@ -1,0 +1,117 @@
+---
+import { looks, site } from "../lib/data";
+
+const data = site();
+const styles: [string, string, string][] = [
+  ["soft_toy", "Soft toy", "Dear Passengers, Fall Guys"],
+  ["low_poly", "Low poly", "Kenney, Monument Valley"],
+  ["toon", "Toon", "Wind Waker, Sable-lite"],
+];
+const picks = ["pilot", "knight", "trebuchet", "passenger", "tree"];
+const info = Object.fromEntries(
+  picks.map((m) => [m, { triangles: data.models[m].triangles, description: data.models[m].description }]),
+);
+const descriptions = Object.fromEntries(styles.map(([k]) => [k, data.styles[k].description]));
+---
+
+<section id="styles">
+  <div class="wrap grid">
+    <div>
+      <span class="eyebrow">One model, any style</span>
+      <h2>Same text. Your game's look.</h2>
+      <p class="lede">
+        A project picks a style: smooth or faceted shapes, triangle budgets, material presets and the look kit
+        (sky, sun, tonemapping, toon bands, outlines). Switch it and every model follows on the next build. These
+        are the same model files, built three times.
+      </p>
+      <p class="more">
+        Five presets ship (soft toy, low poly, toon, clay, diorama). For your own, give the agent 3-6 screenshots
+        of games you like: it writes a style that extends the closest preset, makes one test model, and puts it
+        beside your inspirations with <code>kiln preview --vs</code> until you say yes.
+      </p>
+      <pre class="code"><code><span class="t-com"># styles/cozy.style.toml</span>
+<span class="t-key">extends</span> <span class="t-punc">=</span> <span class="t-str">"soft_toy"</span>
+<span class="t-key">notes</span> <span class="t-punc">=</span> <span class="t-str">"Chunky pastel props, heads 0.6 of the body, no outlines"</span>
+<span class="t-key">[look]</span>
+<span class="t-key">saturation</span> <span class="t-punc">=</span> <span class="t-num">0.9</span>
+<span class="t-key">sky_top</span> <span class="t-punc">=</span> <span class="t-str">"#f2b8c6"</span></code></pre>
+    </div>
+    <figure class="panel show">
+      <div class="chips" id="style-pick" aria-label="Style">
+        {styles.map(([k, label], i) => <button type="button" data-value={k} aria-pressed={String(i === 0)}>{label}</button>)}
+      </div>
+      <div class="stage" id="style-stage" data-looks={JSON.stringify(looks())} data-info={JSON.stringify(info)} data-descriptions={JSON.stringify(descriptions)} role="img" aria-label="The selected demo model in the selected style. Drag to turn it.">
+        <span class="hint">drag to turn</span>
+        <button class="play" type="button" aria-label="Pause">❚❚</button>
+      </div>
+      <div class="chips" id="style-model" aria-label="Model">
+        {picks.map((m, i) => <button type="button" data-value={m} aria-pressed={String(i === 0)}>{m}</button>)}
+      </div>
+      <figcaption id="style-caption"></figcaption>
+    </figure>
+  </div>
+</section>
+
+<script>
+  import { Viewer, base } from "../scripts/viewer";
+  import { chipGroup, playButton } from "../scripts/ui";
+
+  const stage = document.getElementById("style-stage")!;
+  const looks = JSON.parse(stage.dataset.looks!);
+  const info = JSON.parse(stage.dataset.info!);
+  const descriptions = JSON.parse(stage.dataset.descriptions!);
+  const caption = document.getElementById("style-caption")!;
+  const viewer = new Viewer(stage);
+  playButton(viewer, stage.querySelector(".play")!);
+  // deep links: ?style=toon&model=knight#styles
+  const params = new URLSearchParams(location.search);
+  let style = looks[params.get("style") ?? ""] ? params.get("style")! : "soft_toy";
+  let model = info[params.get("model") ?? ""] ? params.get("model")! : "pilot";
+  for (const [id, value] of [["style-pick", style], ["style-model", model]])
+    document.getElementById(id)!.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === value)));
+  const show = () => {
+    viewer.show(`${base()}models/${style}/${model}.glb`, looks[style]);
+    caption.textContent = `${descriptions[style]} · ${model}: ${info[model].triangles[style].toLocaleString("en")} triangles`;
+  };
+  chipGroup(document.getElementById("style-pick")!, (v) => ((style = v), show()));
+  chipGroup(document.getElementById("style-model")!, (v) => ((model = v), show()));
+  // load lazily: this section is below the fold
+  new IntersectionObserver((entries, o) => {
+    if (entries[0].isIntersecting) {
+      o.disconnect();
+      show();
+    }
+  }, { rootMargin: "300px" }).observe(stage);
+</script>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 48px;
+    align-items: center;
+  }
+  .more {
+    color: var(--muted);
+  }
+  .show {
+    margin: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stage {
+    aspect-ratio: 4 / 3;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 2.6em;
+  }
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

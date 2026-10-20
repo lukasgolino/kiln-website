@@ -1,0 +1,321 @@
+@import "@fontsource-variable/fredoka/index.css";
+@import "@fontsource-variable/inter/index.css";
+@import "@fontsource/jetbrains-mono/400.css";
+
+:root {
+  /* the brand palette (art/brand/palettes/brand.pal.yaml): fired clay, cream, kiln glow */
+  --ink: #120c0a;
+  --night: #1b1310;
+  --panel: #241a16;
+  --panel-2: #2d221d;
+  --line: #3d2f28;
+  --muted: #b4a59b;
+  --text: #f7ede3;
+  --cream: #fff4e4;
+  --clay: #e0673c;
+  --fired: #b44a2a;
+  --glow: #ffb347;
+  --teal: #5ccbbb;
+  --teal-deep: #2b8b80;
+  --add: #8fd18a;
+  --del: #f08a7a;
+
+  --font-display: "Fredoka Variable", ui-rounded, system-ui, sans-serif;
+  --font-body: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius: 14px;
+  --gutter: 16px;
+  --max: 1160px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--teal);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--glow);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.12;
+  margin: 0 0 0.5em;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5.4vw, 3.8rem);
+}
+
+h2 {
+  font-size: clamp(1.7rem, 3.8vw, 2.6rem);
+}
+
+h3 {
+  font-size: 1.3rem;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+:not(pre) > code {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.05em 0.35em;
+}
+
+pre {
+  margin: 0;
+  overflow: auto;
+  line-height: 1.5;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+section {
+  padding: 88px 0;
+  border-top: 1px solid var(--line);
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--glow);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+  display: block;
+}
+
+.lede {
+  color: var(--muted);
+  font-size: 1.12rem;
+  max-width: 46rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.7em 1.3em;
+  border-radius: 999px;
+  border: 0;
+  background: var(--clay);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 5px 0 var(--fired);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.btn:hover {
+  color: var(--ink);
+  background: var(--glow);
+}
+
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--fired);
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--line), 0 5px 0 var(--ink);
+}
+
+.btn.ghost:hover {
+  color: var(--teal);
+  box-shadow: inset 0 0 0 2px var(--teal), 0 5px 0 var(--ink);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.code {
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+}
+
+/* chips: style / animation / model pickers */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips button {
+  font: 600 0.88rem var(--font-display);
+  background: var(--panel-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 13px;
+  cursor: pointer;
+}
+
+.chips button:hover {
+  color: var(--text);
+}
+
+.chips button[aria-pressed="true"] {
+  background: var(--clay);
+  border-color: var(--clay);
+  color: var(--ink);
+}
+
+/* syntax colours shared by build-time and in-browser highlighting */
+.t-key {
+  color: #ffb347;
+}
+.t-str {
+  color: #8fd18a;
+}
+.t-num {
+  color: #5ccbbb;
+}
+.t-com {
+  color: #7d6e66;
+  font-style: italic;
+}
+.t-punc {
+  color: #a8988e;
+}
+.d-add {
+  color: var(--add);
+  background: rgba(143, 209, 138, 0.08);
+  display: block;
+}
+.d-del {
+  color: var(--del);
+  background: rgba(240, 138, 122, 0.08);
+  display: block;
+}
+.d-hunk {
+  color: #9a8fd0;
+  display: block;
+}
+.d-ctx {
+  display: block;
+}
+.d-add,
+.d-del,
+.d-hunk,
+.d-ctx {
+  min-height: 1.5em;
+  white-space: pre;
+}
+
+:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* a 3D viewer (src/scripts/viewer.ts): the canvas fills it; the look sets its sky as the background */
+.stage {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  background: linear-gradient(#4f8fe0, #bcd7f2 62%, #a9c48f 62.2%);
+}
+
+.stage:active {
+  cursor: grabbing;
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stage .play {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font: 12px var(--font-display);
+  background: rgba(18, 12, 10, 0.55);
+  color: var(--cream);
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.stage .hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font: 600 12px var(--font-display);
+  color: rgba(18, 12, 10, 0.55);
+  pointer-events: none;
+}

@@ -1,0 +1,10 @@
+# The site's demo project: a toy airline and a toy siege. tools/build_site_assets.py builds it once per style.
+default_style = "soft_toy"
+default_palette = "toybox"
+output_dir = "build"
+preview_dir = "previews"
+export = ["glb"]
+style_version = 1
+
+[lint]
+disable = []

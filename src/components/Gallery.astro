@@ -1,0 +1,132 @@
+---
+import { asset, looks, site, source } from "../lib/data";
+import { highlightSource } from "../scripts/highlight";
+
+const data = site();
+const order = ["pilot", "passenger", "seat", "knight", "archer", "trebuchet", "wall", "barrel", "tree"];
+const models = order.map((name) => ({ name, ...data.models[name] }));
+const sources = Object.fromEntries(order.map((n) => [n, highlightSource(source(n))]));
+---
+
+<section id="gallery">
+  <div class="wrap">
+    <span class="eyebrow">Gallery</span>
+    <h2>The demo project</h2>
+    <p class="lede">
+      A toy airline and a toy siege: nine models in the soft toy style, each a real .glb with its source. Pick one,
+      drag to turn it, play its animations.
+    </p>
+    <div class="layout">
+      <ul class="thumbs" id="gallery-pick">
+        {
+          models.map((m, i) => (
+            <li>
+              <button type="button" data-value={m.name} aria-pressed={String(i === 0)}>
+                <img src={asset(`img/thumbs/${m.name}.png`)} width="120" height="120" alt="" loading="lazy" />
+                <span>{m.name}</span>
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+      <figure class="panel show">
+        <div class="stage" id="gallery-stage" data-looks={JSON.stringify(looks())} data-models={JSON.stringify(Object.fromEntries(models.map((m) => [m.name, m])))} data-sources={JSON.stringify(sources)} role="img" aria-label="The selected demo model. Drag to turn it.">
+          <span class="hint">drag to turn</span>
+          <button class="play" type="button" aria-label="Pause">❚❚</button>
+        </div>
+        <div class="chips" id="gallery-anims" aria-label="Animations"></div>
+        <figcaption id="gallery-caption"></figcaption>
+        <pre class="code src" tabindex="0"><code id="gallery-source" /></pre>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { Viewer, base } from "../scripts/viewer";
+  import { animChips, chipGroup, playButton } from "../scripts/ui";
+
+  const stage = document.getElementById("gallery-stage")!;
+  const looks = JSON.parse(stage.dataset.looks!);
+  const models = JSON.parse(stage.dataset.models!);
+  const sources = JSON.parse(stage.dataset.sources!);
+  const caption = document.getElementById("gallery-caption")!;
+  const code = document.getElementById("gallery-source")!;
+  const viewer = new Viewer(stage);
+  animChips(viewer, document.getElementById("gallery-anims")!);
+  playButton(viewer, stage.querySelector(".play")!);
+  const show = (name: string) => {
+    const m = models[name];
+    viewer.show(`${base()}models/soft_toy/${name}.glb`, looks.soft_toy);
+    caption.textContent = `${name}: ${m.description}. ${m.cls}, ${m.height} m tall, ${m.triangles.soft_toy.toLocaleString("en")} triangles, ${m.source_lines} lines of KILN.`;
+    code.innerHTML = sources[name];
+  };
+  chipGroup(document.getElementById("gallery-pick")!, show);
+  new IntersectionObserver((entries, o) => {
+    if (entries[0].isIntersecting) {
+      o.disconnect();
+      show("pilot");
+    }
+  }, { rootMargin: "300px" }).observe(stage);
+</script>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 28px;
+    margin-top: 36px;
+    align-items: start;
+  }
+  .thumbs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .thumbs button {
+    width: 100%;
+    background: linear-gradient(#cfe0f2, #eef4fa);
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 6px 6px 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font: 600 0.9rem var(--font-display);
+    color: #3a2c25;
+  }
+  .thumbs button[aria-pressed="true"] {
+    border-color: var(--clay);
+  }
+  .thumbs img {
+    width: 100%;
+    height: auto;
+  }
+  .show {
+    margin: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stage {
+    aspect-ratio: 4 / 3;
+  }
+  figcaption {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .src {
+    max-height: 260px;
+    font-size: 12px;
+  }
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,174 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+const { title, description, image = "og/kiln.png" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, "/");
+const url = (p: string) => base + p.replace(/^\//, "");
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(url(image), Astro.site);
+const nav = [
+  ["Styles", "#styles"],
+  ["Features", "#features"],
+  ["Gallery", "#gallery"],
+  ["Install", "#install"],
+  ["Docs", "docs/"],
+];
+const home = Astro.url.pathname.replace(/\/?$/, "/") === base;
+---
+
+<!doctype html>
+<html lang="en" data-base={base}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" sizes="32x32" href={url("brand/pot-32.png")} />
+    <link rel="icon" type="image/png" sizes="16x16" href={url("brand/pot-16.png")} />
+    <link rel="apple-touch-icon" href={url("brand/pot-180.png")} />
+    <meta name="theme-color" content="#1b1310" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip sr-only" href="#main">Skip to content</a>
+    <header class="top">
+      <div class="wrap bar">
+        <a class="brand" href={base} aria-label="KILN home">
+          <img src={url("brand/pot-64.png")} width="34" height="34" alt="" />
+          <span>KILN</span>
+        </a>
+        <nav aria-label="Main">
+          {nav.map(([label, href]) => <a href={href.startsWith("#") ? (home ? href : base + href) : url(href)}>{label}</a>)}
+          <a class="sister" href="https://pagan.top/" title="PAGAN, KILN's sister library: pixel art">PAGAN ↗</a>
+          <a class="sister" href="https://segan.top/" title="SEGAN, KILN's sister library: audio">SEGAN ↗</a>
+          <a class="gh" href="https://github.com/lukasgolino/KILN">GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer>
+      <div class="wrap foot">
+        <div>
+          <img src={url("brand/pot-64.png")} width="40" height="40" alt="" />
+          <p>
+            KILN: Keyed Implicit Language &amp; Notation. MIT-licensed, free, no account.<br />
+            The icon and every model on this site were made with KILN. Sister libraries:
+            <a href="https://pagan.top/">PAGAN</a> (pixel art) and <a href="https://segan.top/">SEGAN</a> (audio).
+          </p>
+        </div>
+        <nav aria-label="Footer">
+          <a href={url("docs/")}>Docs</a>
+          <a href={url("docs/reference/")}>Reference</a>
+          <a href={url("docs/changelog/")}>Changelog</a>
+          <a href="https://pagan.top/">PAGAN (pixel art)</a>
+          <a href="https://segan.top/">SEGAN (audio)</a>
+          <a href="https://github.com/lukasgolino/KILN">GitHub</a>
+          <a href="https://github.com/lukasgolino/KILN/blob/main/LICENSE">MIT License</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .skip:focus {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    width: auto;
+    height: auto;
+    clip: auto;
+    z-index: 100;
+    background: var(--clay);
+    color: var(--ink);
+    padding: 8px 12px;
+  }
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(27, 19, 16, 0.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    gap: 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font: 600 1.45rem var(--font-display);
+    color: var(--cream);
+    letter-spacing: 0.04em;
+  }
+  nav {
+    display: flex;
+    gap: 22px;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.98rem;
+  }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  nav a:hover {
+    color: var(--glow);
+  }
+  .gh {
+    color: var(--text);
+  }
+  .sister {
+    color: var(--teal);
+  }
+  @media (max-width: 760px) {
+    .top nav a:not(.gh):not(.sister) {
+      display: none;
+    }
+    .top nav {
+      gap: 14px;
+    }
+  }
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 56px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .foot > div {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    max-width: 36rem;
+  }
+  .foot nav {
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.92rem;
+  }
+</style>

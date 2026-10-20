@@ -1,0 +1,10 @@
+# The site's icon: a little clay pot, made with KILN (tools/build_site_assets.py renders it).
+default_style = "soft_toy"
+default_palette = "brand"
+output_dir = "build"
+preview_dir = "previews"
+export = ["glb"]
+style_version = 1
+
+[lint]
+disable = []

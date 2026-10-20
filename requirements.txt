@@ -1,0 +1,2 @@
+# The KILN release the site art is built with. Bump the tag, rerun tools/build_site_assets.py, commit.
+kiln @ git+https://github.com/lukasgolino/KILN@v0.1.0

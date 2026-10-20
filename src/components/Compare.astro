@@ -1,0 +1,108 @@
+---
+const rows: [string, string, string, string][] = [
+  ["How models are made", "A neural model generates a mesh from a prompt or an image", "The agent drives Blender step by step through tool calls", "The agent writes a source file in a text notation that KILN compiles"],
+  ["Models are stored as", "Meshes (.glb, .fbx)", ".blend files", "Text in git: diffable, reviewable, editable by hand or by agent"],
+  ["Cost / access", "Cloud credits or a subscription; open-weight models need a large GPU", "Free; needs Blender installed", "Free, MIT, offline, CPU only"],
+  ["Meshes", "Dense or uneven triangles; often needs clean-up", "Whatever the agent builds", "Closed meshes within the style's triangle budget, LODs on request"],
+  ["Style across a game", "Per prompt / reference image", "None built in", "Project-wide styles and palettes; change one, every model follows"],
+  ["Rigs and animation", "Auto-rigging on some services, mostly humanoids", "Possible, by hand", "Pivots, rigid or soft skins, poses and cycles in the notation"],
+  ["Quality checks", "None", "None built in", "A linter and previews the agent reads, so it fixes its own mistakes"],
+  ["Engine output", "glTF / FBX", "Whatever Blender exports", "glTF + manifest.json for any engine; Godot scenes, materials and look kits"],
+  ["Deterministic", "No", "Depends on the agent", "Yes: same text, same model"],
+];
+---
+
+<section id="compare">
+  <div class="wrap">
+    <span class="eyebrow">How it compares</span>
+    <h2>Three ways to get 3D from an agent</h2>
+    <p class="lede">Facts as of October 2026. Pick what fits your game.</p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">Image / text-to-3D generators<small>Meshy, Tripo, Rodin, Hunyuan3D</small></th>
+            <th scope="col">Agent-driven Blender<small>Blender MCP servers</small></th>
+            <th scope="col" class="us">KILN</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map(([k, a, b, c]) => (
+              <tr>
+                <th scope="row">{k}</th>
+                <td>{a}</td>
+                <td>{b}</td>
+                <td class="us">{c}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="where">
+      <b>Where KILN loses:</b> it isn't a sculptor. Realistic or finely detailed models (faces, hands, foliage) are
+      beyond simple blended shapes: use a CC0 pack or a generator for those. KILN wins on a whole game's worth of
+      stylised models that match, move and stay maintainable.
+    </p>
+  </div>
+</section>
+
+<style>
+  .scroll {
+    overflow-x: auto;
+    margin-top: 28px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 760px;
+    font-size: 0.92rem;
+  }
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  thead th {
+    font: 600 0.95rem var(--font-display);
+    background: var(--panel);
+  }
+  thead small {
+    display: block;
+    font: 0.75rem var(--font-body);
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  tbody th {
+    font-weight: 600;
+    color: var(--muted);
+    width: 15%;
+  }
+  td {
+    color: var(--muted);
+  }
+  .us {
+    color: var(--text);
+    background: rgba(224, 103, 60, 0.08);
+  }
+  thead .us {
+    color: var(--glow);
+  }
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .where {
+    margin-top: 20px;
+    color: var(--muted);
+    max-width: 52rem;
+  }
+  .where b {
+    color: var(--text);
+  }
+</style>

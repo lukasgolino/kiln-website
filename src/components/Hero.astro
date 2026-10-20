@@ -1,0 +1,132 @@
+---
+import { looks, site, source } from "../lib/data";
+import { highlightSource } from "../scripts/highlight";
+
+const text = source("pilot");
+const lines = text.split("\n").length;
+const pilot = site().models.pilot;
+---
+
+<section class="hero">
+  <div class="wrap grid">
+    <div class="copy">
+      <span class="eyebrow">Keyed Implicit Language &amp; Notation</span>
+      <h1>Your agent can't sculpt.<br /><span>It can write.</span></h1>
+      <p class="lede">
+        KILN turns text into smooth, stylised 3D game models. Your AI agent writes a model as simple shapes that
+        blend like clay; KILN meshes, paints, rigs and animates it, and your game gets glTF files and Godot
+        scenes. No image generator, no GPU, no Blender.
+      </p>
+      <div class="cta">
+        <a class="btn" href="#styles">Pick a style</a>
+        <a class="btn ghost" href="#install">Install (1 line)</a>
+      </div>
+      <ul class="facts">
+        <li>MIT-licensed, free</li>
+        <li>Runs locally, offline</li>
+        <li>No credits, no API key</li>
+        <li>The models are yours</li>
+      </ul>
+      <p class="sister">
+        Looking for pixel art? Try <a href="https://pagan.top/">PAGAN</a>. Audio? <a href="https://segan.top/">SEGAN</a>.
+        Same design, same workflow.
+      </p>
+    </div>
+    <figure class="show panel">
+      <div class="stage" id="hero-stage" data-looks={JSON.stringify(looks())} role="img" aria-label="A bean pilot, a real KILN .glb, waddling. Drag to turn it.">
+        <span class="hint">drag to turn</span>
+        <button class="play" type="button" aria-label="Pause">❚❚</button>
+      </div>
+      <div class="chips" id="hero-anims" aria-label="Animations"></div>
+      <figcaption>
+        <span>{pilot.triangles.soft_toy.toLocaleString("en")} triangles, rigged, {Object.keys(pilot.animations).length} animations, from this {lines}-line file</span>
+        <code>models/pilot.kiln.yaml</code>
+      </figcaption>
+      <pre class="code src" tabindex="0" aria-label="The pilot's KILN source"><code set:html={highlightSource(text)} /></pre>
+    </figure>
+  </div>
+</section>
+
+<script>
+  import { Viewer, base } from "../scripts/viewer";
+  import { animChips, playButton } from "../scripts/ui";
+
+  const stage = document.getElementById("hero-stage")!;
+  const looks = JSON.parse(stage.dataset.looks!);
+  const viewer = new Viewer(stage);
+  animChips(viewer, document.getElementById("hero-anims")!);
+  playButton(viewer, stage.querySelector(".play")!);
+  viewer.show(`${base()}models/soft_toy/pilot.glb`, looks.soft_toy, "walk");
+</script>
+
+<style>
+  .hero {
+    border-top: 0;
+    padding: 64px 0 88px;
+    background:
+      radial-gradient(ellipse at 80% 15%, rgba(255, 179, 71, 0.13), transparent 55%),
+      radial-gradient(ellipse at 10% 90%, rgba(224, 103, 60, 0.12), transparent 50%);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 48px;
+    align-items: center;
+  }
+  h1 span {
+    color: var(--glow);
+  }
+  .cta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 28px 0 22px;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .facts li::before {
+    content: "● ";
+    color: var(--clay);
+  }
+  .sister {
+    margin: 18px 0 0;
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  .show {
+    margin: 0;
+    padding: 14px;
+  }
+  .stage {
+    aspect-ratio: 4 / 3;
+  }
+  .chips {
+    margin-top: 10px;
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 2px 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .src {
+    max-height: 240px;
+    font-size: 12px;
+  }
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

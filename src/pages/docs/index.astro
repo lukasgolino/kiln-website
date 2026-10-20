@@ -1,0 +1,30 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import { asset } from "../../lib/data";
+---
+
+<Doc title="Docs" description="KILN documentation: the agent workflow, the full notation reference and the changelog.">
+  <h1>KILN docs</h1>
+  <p>
+    These pages are generated from the files that ship with KILN, so they always match the release. The same
+    text is what your agent reads: the skill installs it into your repo, and the MCP server serves it as
+    <code>kiln://workflow</code> and <code>kiln://reference</code>.
+  </p>
+  <ul>
+    <li><a href={asset("docs/workflow/")}>Workflow</a>: how an agent sets up a game's 3D art, picks or makes a style, makes, rigs and animates a model, and builds it.</li>
+    <li><a href={asset("docs/reference/")}>Notation reference</a>: shapes, parts, patterns, decals, rigs, animations, styles, <code>kiln.toml</code>, commands, lint rules, build output.</li>
+    <li><a href={asset("docs/changelog/")}>Changelog</a>: every release.</li>
+  </ul>
+  <h2>Five-minute start</h2>
+  <pre><code>pip install "kiln @ git+https://github.com/lukasgolino/KILN"
+kiln init my-art --style soft_toy
+cd my-art
+kiln new model pilot --template bean
+kiln lint && kiln preview pilot   # previews/pilot/turntable.png
+kiln build                        # build/models/pilot.glb + manifest.json</code></pre>
+  <h2>Sister libraries</h2>
+  <p>
+    <a href="https://pagan.top/">PAGAN</a> does the same for pixel art (sprites, tiles, icons, UI) and
+    <a href="https://segan.top/">SEGAN</a> for game audio. A 3D game usually wants all three.
+  </p>
+</Doc>

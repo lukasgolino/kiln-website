@@ -1,0 +1,92 @@
+---
+import { asset } from "../lib/data";
+
+const faqs: [string, string][] = [
+  [
+    "Is KILN an AI 3D generator?",
+    "No. KILN doesn't generate: it compiles. Your AI agent writes KILN source files (shapes, colours, rigs, animations); KILN checks them, meshes them and builds them. The quality comes from the agent's modelling and KILN's mesher, not from a neural network, so results are exact, repeatable and editable.",
+  ],
+  [
+    "What does it cost?",
+    "Nothing beyond the agent you already use. KILN is MIT-licensed and runs on your CPU: no credits, no API key, no GPU. If you have a Claude subscription, that's all you need.",
+  ],
+  [
+    "Do I need Blender?",
+    "No. KILN meshes, paints, rigs and exports by itself, and its previews render without a GPU or display. Blender is still handy for one-off hand edits of a built .glb.",
+  ],
+  [
+    "Can it match the look of a game I like?",
+    "Yes, within stylised 3D. Give your agent 3-6 screenshots; it writes a style that extends the closest preset (soft toy, low poly, toon, clay, diorama), tunes shapes, materials and lighting, and compares a test model beside your screenshots until you approve. Inspirations are reference only: never copy another game's characters.",
+  ],
+  [
+    "What can't it do well?",
+    "Realism and fine detail: faces with expressions, fingers, dense foliage, realistic rocks. Use free CC0 packs for those (KILN recolours them to your palette and style), or a generator.",
+  ],
+  [
+    "Which agents work with it?",
+    "Any agent that speaks MCP (Claude Code, Claude Desktop, Cursor, your own). The KILN skill, which teaches the full workflow, is for Claude. Without either, the CLI's --json output is easy for any program to drive.",
+  ],
+  [
+    "Which engines?",
+    "Any engine that loads glTF: manifest.json describes every model, part, pivot, animation and variant. Godot 4 also gets scenes with the style's materials and a look kit per style, verified in headless Godot.",
+  ],
+  [
+    "How is it related to PAGAN?",
+    "KILN is PAGAN's 3D sibling: PAGAN writes pixel art as text, KILN writes smooth 3D. They share the palette format and the workflow (BRIEF.md, STYLE.md, lint, previews, build), and PAGAN images go on KILN models as decals. SEGAN does the same for audio.",
+  ],
+  [
+    "Who owns the models?",
+    "You do. KILN runs locally; nothing is uploaded and nothing is claimed.",
+  ],
+];
+---
+
+<section id="faq">
+  <div class="wrap">
+    <span class="eyebrow">FAQ</span>
+    <h2>Straight answers</h2>
+    <div class="list">
+      {
+        faqs.map(([q, a]) => (
+          <details>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))
+      }
+    </div>
+    <p class="more">More in the <a href={asset("docs/")}>docs</a>.</p>
+  </div>
+</section>
+
+<style>
+  .list {
+    margin-top: 24px;
+    max-width: 52rem;
+  }
+  details {
+    border-bottom: 1px solid var(--line);
+  }
+  summary {
+    cursor: pointer;
+    padding: 16px 0;
+    font-weight: 600;
+    list-style: none;
+  }
+  summary::before {
+    content: "+ ";
+    color: var(--glow);
+    font-family: var(--font-display);
+  }
+  details[open] summary::before {
+    content: "− ";
+  }
+  details p {
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  .more {
+    margin-top: 20px;
+    color: var(--muted);
+  }
+</style>
