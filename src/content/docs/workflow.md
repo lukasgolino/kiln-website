@@ -49,8 +49,11 @@ Write the answers into BRIEF.md and STYLE.md.
    W103 floating pieces, W106 not standing on the ground, W108 size wrong for the class).
 5. **Look:** `kiln preview <name>` writes a turntable (8 sides x below / eye level / above). Open it and check:
    silhouette from every side, proportions, nothing floating, nothing poking through, the face reads, colours
-   balanced. Then `--closeup <part>` for anything seen up close (faces, hands, hit zones). Iterate until it's right.
+   balanced. Then `--closeup <part>` for anything seen up close (faces, hands, hit zones), and `--detach` when the
+   model has detachable (`separate`) parts: each one off, and what's under it. Iterate until it's right.
    You will misjudge proportions without looking: always look.
+   For people, start from the template library (`kiln library`; `extends: [body_..., head_..., helmet_..., armour_...]`)
+   and add or override parts, instead of building bodies and faces from scratch.
 6. **Fit with the rest:** `kiln lineup` (same scale, one ground line, a 1 m bar) and `kiln preview <name> --vs`
    (beside the inspiration images). Does it look like it belongs in the same game?
 7. **Report** to the owner with the preview images. When they approve: `kiln mark <name> --approved`, tick it in
@@ -91,6 +94,9 @@ Write the answers into BRIEF.md and STYLE.md.
   that recolours it (and a `swap` table in the manifest for other engines).
 - Crowds (many instances): `vertex_colors = true` puts colours in the vertices, one surface per material preset,
   so a character costs 2-4 draw calls instead of one per colour.
+- Crowds, best: `atlas = true` gives every model one material (colours and presets in a small palette texture): 1 draw
+  call per mesh (2 with a decal), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
+  baked ambient occlusion. Use it instead of `vertex_colors`.
 - Warnings W111 (a part lost to the triangle budget) and W112 (a LOD well over its target) mean: raise the budget.
 - `kiln preview <name> --engine` renders through Godot itself (needs a display): use it to confirm the look.
 - `manifest.json` lists every model: glb, scene, size and bounds in metres, triangles, parts (pivot, parent, meta),
@@ -127,6 +133,19 @@ Quaternius (CC0), Poly Pizza (CC0/CC-BY). `kiln import <file.glb> --licence CC0-
 --height 2.5` copies it into `imports/`, writes a model with `source:`; the build scales it, stands it on the
 ground, snaps its colours to the palette and applies the style's materials. `kiln credits` and `CREDITS.md` list
 authors. Never use assets whose licence forbids it (NC, ND, SA, Synty, anything "no AI").
+
+**Match a reference** (make a KILN model that holds its own next to a CC0 asset, e.g. a KayKit barrel):
+1. Put the reference in `imports/` and ask the owner for thresholds, with defaults: silhouette `iou` >= 0.9 (and
+   `iou_min` >= 0.85), `triangle_ratio` <= 1.5, `surfaces` <= the reference's + 1, `colors` within +-2,
+   `open_edges` 0, and for a faceted (low poly) target `facet_regularity` >= 0.7 (use a hard-surface style or parts).
+2. `kiln preview <model> --vs imports/<ref>.glb --ref-height <the model's intended height> --json` (MCP: `preview`
+   with `which: "vs"`, `reference`, `ref_height`). Read `compare` and LOOK at the sheet: the silhouette row shows red
+   where the model sticks out and blue where it is missing, per view.
+3. Change the model (proportions, part sizes, budget, `sides`, colours), lint, and repeat step 2 until every metric is
+   inside the thresholds. Fix the worst view first (`iou_views`). Don't copy the reference's details one for one:
+   match its size, outline, density and colour count; the design stays ours.
+4. Report both renders (the vs sheet) and the final metrics against the thresholds; say which ones you couldn't meet
+   and why.
 
 ## 8. Reporting
 

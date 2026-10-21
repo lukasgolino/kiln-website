@@ -6,6 +6,111 @@ before 1.0).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
+LOOSE backlog: text outlines, holes, UVs, origins, per-vertex numbers, aim, pattern lists, rim light, bloom.
+
+### Changed
+
+- Extrude outlines measure only the edges that can be nearest to each point (tiles of points, bounded by their
+  centre's nearest edge): same distances, several times faster on long outlines (LOOSE #31).
+- W106 accepts a mesh up to 1.5 cells above the shapes' own bottom when that is on y = 0 (rounded extrudes at
+  coarse resolution, LOOSE #33), and skips models with an explicit `origin`.
+
+### Added
+
+- `[look] rim_light`, `rim_light_color`, `rim_light_power` (LOOSE #34): a fresnel rim added to every surface,
+  a blend-add next pass in Godot scenes (only written for styles that set it) and in previews.
+- Previews bloom emissive materials when the style's look has `glow` (as Godot's environment glow does; LOOSE #42).
+- `origin: base | center | [x, y, z]` on models (LOOSE #40): the exported glb's origin (the root node carries the
+  shift; LODs share the full model's); manifest `origin`.
+- `uv: cylindrical | spherical | box | along` on parts (LOOSE #39): projected texture coordinates in the part's
+  own frame, TEXCOORD_0 (TEXCOORD_1 when the atlas or a decal uses the first); manifest `uv`. `kiln.api.part(uv=...)`.
+- `aim: [from, to]` (or `{ from, to, roll }`) on every shape (LOOSE #29): its y axis along the line, halfway
+  between the points, height = the distance when not given.
+- `pattern:` takes a list (painted in order, each over the last) and `frame: part` (axes in the part's own
+  frame, following rotate/aim) (LOOSE #30); ring arrays turn `around` any direction `[x, y, z]` (LOOSE #29).
+- `attr: { name: number }` on parts (LOOSE #38): custom glTF attributes `_NAME` per vertex; the first name also in
+  COLOR_0's alpha (what Godot imports); manifest `attributes`.
+- `extrude: { path: "<SVG path data>" }` (LOOSE #26): subpaths flattened to outlines (curves within
+  `path_tolerance`), even-odd counters and islands, `path_scale`; hard extrudes add islands and cut counters.
+- `extrude` takes `holes` (outlines cut through, rounded with the rest; LOOSE #27) and `offset` (grow or shrink
+  the outline; LOOSE #28).
+
+## [0.5.0] - 2026-10-21
+
+CC0 parity, second half: palette atlas (M9), humanoids and clip retargeting (M5), attachments for CC0 characters (M6),
+the template library (M4).
+
+### Added
+
+- Palette atlas (M9): `atlas = true` (kiln.toml) gives every model one material: colours, roughness/metal, glow (and
+  Godot rim light) live in small palette textures next to the glb (`<name>.palette.png`, `.material.png`, `.glow.png`,
+  `.rim.png`), faces' UVs point at their colour's cell. 1 surface per mesh, 2 with a decal (the demo knight: 2 meshes,
+  1 material, instead of 11 surfaces and 10 materials).
+- Variants under `atlas` are texture swaps (`<name>.<variant>.palette.png`): same mesh, and the Godot variant scene is
+  the base glb with the variant's palette. Manifest `atlas` (textures, cells with colour, preset, uv and pixel) and
+  variant `palette`/`glow`.
+- `atlas_ao = true`: ambient occlusion baked into the vertex colours (COLOR_0, a multiplier), from the distance field.
+- `kiln build --verify-godot` checks that atlas models sample their palette texture.
+- Humanoids (M5): `skeleton: humanoid` (parts named after standard joints; default parents, pivots and soft skin;
+  manifest `humanoid` maps joints to KayKit, Mixamo and Godot SkeletonProfileHumanoid names) and imported
+  animations `{ import: <clips.glb>, clip: <name>, fps, loop, speed }` retargeted at build time from CC0 clip libraries
+  such as KayKit Character Animations (Rig_Medium); manifest animations name their `clip`.
+- Attachments for CC0 characters (M6): `fit_to: { file, bone, meshes }` and `fit: { to: target, gap }` wrap a shell
+  around the character's own mesh (an exact distance to its triangles); the glb is exported in the bone's space,
+  manifest `attach`; W113 when it sinks into the character; `kiln preview --fit`.
+- Template library (M4): 3 bodies, 6 heads, 6 helmets and 5 armour pieces in the package (`kiln library`, preview in
+  docs/templates.png), combined with `extends: [a, b, ...]` (a list; project templates of the same name win) or
+  `kiln new model <name> --extends a,b,c`; library palette `people`. `cut: <id>` cuts only that id; `fit` takes a list
+  of ids; fitted shells are their own mesh pieces; templates may be partial (rig and fit names another template
+  brings).
+
+### Fixed
+
+- `vertex_colors = true`: every surface carries COLOR_0, glow ones (which keep a material per colour) included, so
+  rigged glowing models get vertex colours too (LOOSE 36).
+- `kiln.api.part()` sorts `loose`, `hard`, `bevel`, `chamfer`, `segments`, `fit` and `keep` into the part (LOOSE 32, 43).
+
+## [0.4.0] - 2026-10-21
+
+Toward CC0 parity (CC0_PARITY_PLAN.md, from LOOSE_REPORT.md items 23-25).
+
+### Added
+
+- Hard surface (M2): parts made as exact polygons with designed facets and crisp creases, joined by exact CSG.
+  A part is hard with `sides: N` (cylinder, cone, lathe, torus; sphere, ellipsoid, capsule, tube when hard),
+  `chamfer`, `bevel` + `segments`, `blend: none` or `hard: true`; style `[shape] hard_surface = auto | always | never`
+  and `hard_sides` (low_poly: always, 8). `sides` also shapes the smooth field (an octagonal prism). The demo trebuchet
+  in low_poly is 908 triangles with octagonal wheels.
+- `shell: { thickness, side: in | both, open: -y }`: a wall inside the surface with one side open, showing its rim.
+- Rig `under: { color, material, gap }` on a `separate` part: paints what it covers (hair under a helmet).
+- `fit: { to: <id>, gap }` on a shell part (M3): the wall wraps those parts' surface wherever the part's own shape
+  reaches, so a helmet encloses the head down to the cheeks instead of perching on it.
+- W113: a part pokes through another part's shell (eyes through a visor slot, a head through a helmet).
+- `keep: true` (M8): the part is its own small mesh (on a finer grid if it's small) that every LOD keeps. Crisp parts
+  under 2% of the model's size are kept anyway (rivets, pupils, studs; `keep: false` opts out).
+- Hardware parts (M8): `rivets`, `band` (with `fit:` round an earlier part's surface), `planks`, `bolt`, `slit`;
+  each expands into ordinary (hard) parts.
+- `kiln preview <model> --detach` (and the MCP `preview` tool's `detach`): each separate part off in turn.
+- E013: the built mesh has open edges (cracks).
+- Reference comparison (M7): `kiln preview <model> --vs <ref.glb|ref.gltf> [--ref-height M]` renders the model and a
+  reference mesh at one scale in paired turntable rows, head-region closeups and per-view silhouette differences, with
+  metrics (printed and under `compare` in `--json`): silhouette IoU over 8 views, triangles and their ratio, surfaces,
+  materials, colours, facet regularity and open edges of both. `--vs` without a path still shows the inspiration
+  images. The MCP `preview` tool takes `reference` and `ref_height` with `which: "vs"`.
+- Skill: a "match a reference" workflow (iterate until the metrics are inside the owner's thresholds).
+
+### Fixed
+
+- Cracks at colour borders (LOOSE 23: 36 open edges on a footman; the demo knight had 48): cutting a border split
+  only one side of an edge, leaving T-junctions. Every demo model is now closed.
+- Zero-volume fins (pairs of opposite faces) that decimation could leave on thin parts are removed.
+- Smooth shading streaked across flat faces next to crisp edges (a cylinder's cap): the crease test compared the
+  field's normal on the edge (the bisector) with the full `sharp_angle` instead of half of it.
+- W102 and thin-part protection use a shell's wall thickness.
+- The preview renderer crashed when a batch of triangles covered no pixel centre (close framings).
+
 ## [0.3.0] - 2026-10-20
 
 From the LOOSE! dogfooding report (LOOSE_REPORT.md, items 1-22).
@@ -108,7 +213,10 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/lukasgolino/KILN/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/lukasgolino/KILN/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/lukasgolino/KILN/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/lukasgolino/KILN/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/lukasgolino/KILN/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lukasgolino/KILN/releases/tag/v0.1.0

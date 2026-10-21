@@ -25,6 +25,8 @@ export = ["glb", "godot"]
 style_version = 1
 variant_glbs = true            # false: no .glb per variant; Godot gets <name>.<variant>.tscn recolouring the base glb
 vertex_colors = false          # true: colours in the vertices, one surface per material preset (fewer draw calls)
+atlas = false                  # true: one material per model from small palette textures (1 surface, 2 with decals)
+atlas_ao = false               # true (with atlas): ambient occlusion baked into the vertex colours
 [lint]
 disable = ["W106"]
 ```
@@ -42,6 +44,8 @@ style: soft_toy                # optional: else kiln.toml default_style
 palette: main                  # optional: else default_palette
 budget: 6000                   # optional: triangles (overrides the style's budget for the class)
 lod: [2500, 800]               # optional: extra lower-detail .glb files
+origin: center                 # optional: the .glb's origin: base (bottom centre of the box) | center (spinning debris) | [x, y, z]
+                               #   (default: model space as written; manifest `origin` = that point, other manifest values stay model space)
 parts: [...]                   # the shapes (below)
 rig: {...}                     # optional: bones (below)
 skin: soft                     # none (static) | rigid | soft; default rigid when there is a rig
@@ -103,14 +107,16 @@ then y then z, about its centre).
 | `sphere` | `radius` |
 | `ellipsoid` | `radii: [x, y, z]` |
 | `box` | `size: [x, y, z]`, `round` (edge radius; size kept) |
-| `cylinder` | `radius`, `height` (along y), `round` |
-| `cone` | `radius` (bottom), `radius_top` (0 = point), `height` (along y) |
+| `cylinder` | `radius`, `height` (along y), `round`, `sides` (8: an octagonal prism, a flat side facing +z) |
+| `cone` | `radius` (bottom), `radius_top` (0 = point), `height` (along y), `sides` (4: a pyramid) |
 | `capsule` | `from: [x, y, z]`, `to: [x, y, z]`, `radius`, `radius_to` (taper) |
 | `tube` | `points: [[x, y, z], ...]` (2+), `radius`, `radius_to`: ropes, branches, rails, tails |
 | `torus` | `radius` (ring), `thickness` (tube radius); ring in the xz plane (rotate for others) |
 | `lathe` | `profile: [[r, y], ...]` spun around y: vases, bottles, bells, caps, chess pieces, round towers. The profile is a closed outline in the (radius, height) plane: go up the outside and come back down the axis (points with r = 0), e.g. a cap `[[0, 1.06], [0.2, 1.02], [0.3, 0.9], [0.3, 0.8], [0, 0.8]]`. Corners are rounded (`smooth: true`, default); `smooth: false` keeps them sharp |
-| `extrude` | `points: [[x, z], ...]` outline seen from above (3+ different points; repeats and a closing point are dropped), `height` (along y), `round`: shields, signs, floor plans, stars |
+| `extrude` | `points: [[x, z], ...]` outline seen from above (3+ different points; repeats and a closing point are dropped), `height` (along y), `round`, `holes: [[[x, z], ...], ...]` (outlines cut through: letters O, A, B; `round` rounds their edges too; hard parts: hole edges stay sharp), `offset` (grow the outline by metres, < 0 shrinks: inset face plates). Or `path: "M 0 0 L 1 0 Q 1 1 0 1 Z"` (SVG path data: M L H V C S Q T A Z, absolute and relative; y runs down onto z, so `rotate: [90, 0, 0]` stands it up reading right from the front) with `path_scale` (metres per unit: 0.001 for a 1000-unit font em) and `path_tolerance` (0.002 m): every subpath is an outline, even-odd (counters are holes, separate shapes are islands). Font glyphs: export the text as an SVG path from a vector editor or a font tool. Shields, signs, floor plans, stars, letters |
 | `wedge` | `size: [x, y, z]`: a roof (ridge along x at the top) |
+
+`sides` (3-64) also works on `lathe` and `torus`, and on `sphere`, `ellipsoid`, `capsule` and `tube` for hard parts.
 
 For `capsule` and `tube`, the points are in the part's frame (moved by `at`, turned by `rotate`). Everything else in a
 model (decal `at`, rig pivots, poses' offsets) is in model space.
@@ -128,23 +134,69 @@ model (decal `at`, rig pivots, poses' offsets) is in model space.
 | `mirror: x` | also on the other side of 0 (x, y, z or a list); same id |
 | `mirror_id: arm_r` | with `mirror: x`: the copy is a separate part with this id (rig entries are mirrored too) |
 | `array: { count: 4, step: [1, 0, 0] }` | repeat in a row |
-| `array: { count: 8, around: y, center: [0, 0, 0], angle: 360 }` | repeat in a ring |
-| `shell: 0.02` | hollow, walls this thick |
+| `array: { count: 8, around: y, center: [0, 0, 0], angle: 360 }` | repeat in a ring (`around` may be any direction `[x, y, z]`: a ring on a tilted wheel) |
+| `shell: 0.02` | hollow, walls this thick (centred on the surface) |
+| `shell: { thickness: 0.02, open: -y }` | a wall inside the surface (the outside stays put), one side cut open at the shape's centre: helmets, bowls, pots, shields with a visible rim (`side: both` centres it) |
+| `fit: head` or `fit: { to: head, gap: 0.01 }` | with `shell`: the wall wraps the parts with that id, `gap` away from them, wherever this part's own shape reaches (its shape is the coverage: a sphere around the head, `open: -y` and placed low enough to cover the cheeks). Helmets that sit on the head instead of perching on it; cut a face opening after it (before the head, so the cut doesn't take the face) |
 | `twist: 90` | degrees per metre about the shape's y axis |
 | `noise: { amount: 0.01, scale: 0.2, seed: 3 }` | lumpy surface (rocks, bark, clay): amount in metres, scale = bump size |
 | `pattern: {...}` | a second colour painted on the part (below) |
 | `decal: {...}` | an image on the part (below) |
 | `loose: true` | this part may float free (flames, bees, sparks, rubble): W103 doesn't count it |
+| `blend: none` | a hard part, joined crisply (below) |
+| `hard: true` / `false` | make this part hard (exact polygons) or smooth, whatever the style says |
+| `chamfer: 0.02` | hard parts: one flat band cut along every edge (box, wedge, cylinder, cone, extrude) |
+| `bevel: 0.02` | hard parts: rounded edges in `segments: 1-4` flat bands (default 2) |
+| `keep: true` | this detail survives every reduction (LODs) as its own small mesh, sitting in the surface around it. Crisp (`blend` 0) parts smaller than 2% of the model are kept anyway (rivets, pupils, studs); `keep: false` opts out |
+| `aim: [[x, y, z], [x, y, z]]` | points the shape's own y axis from the first point to the second and puts it halfway (instead of `at`); a shape with a `height` that doesn't give one gets the distance. `{ from, to, roll: 30 }` spins it about that line; `rotate` turns it in its own frame first. Arrows, spears, struts, beams at any angle |
+| `attr: { heat: 0.9 }` | named numbers a shader reads per vertex (heat, opacity, wind weight); faces of parts without it get 0. Each becomes a custom glTF attribute `_HEAT` (Blender, three.js; Godot 4.7 drops custom attributes), and the first name (alphabetical) also goes in COLOR_0's alpha (Godot: `COLOR.a`; white RGB unless `vertex_colors`). Manifest `attributes` |
+| `uv: cylindrical` | texture coordinates projected from the part's shape, in its own frame (they follow `rotate`, mirror, arrays): `cylindrical` (u around, v along the axis over the part's box), `spherical`, `box` (per face, metres / the box's largest side), `along` (tubes and capsules: v = distance along the path, 0..1). `{ project, axis: y, scale: [1, 4] }`. Written to TEXCOORD_0 (Godot UV), or TEXCOORD_1 (UV2) when the atlas or a decal uses the first; manifest `uv: {set, parts}`. Other faces get (0, 0) |
 
 Order matters: details that sit on a surface come **after** it. A part completely inside later parts shows nothing
 (W101). A cut removes material from what came before it, and paint follows: a door placed after the cut that made its
 archway is painted as the door, not as the wall. Parts thinner than about two mesh cells break up (W102): resolution comes from the style (soft_toy: 8 mm
 for a ~1 m model, coarser for bigger models).
 
+### Hard surface
+
+Smooth parts are sampled from the distance field and reduced to the budget: soft clay-toy shapes. **Hard** parts are
+made as exact polygons instead: designed facets, crisp creases, octagonal wheels, planks, beams, armour plates, the
+hand-built low-poly look (Kenney, KayKit). A part is hard when it asks (`sides`, `chamfer`, `bevel`, `blend: none` or
+`hard: true`), or always with a style's `hard_surface = "always"` (low_poly), except the body of a soft-skinned
+character (its joints bend by blending) and parts with `twist` or `noise`. Hard parts join each other exactly
+(union, cut, intersect, in order); every later cut or intersect, of any shape, applies to them too. They sit in
+smooth parts without blending. A box's `round` is a chamfer on a hard part. Round hard shapes get the style's
+`hard_sides` (12 by default; low_poly 8) unless they say `sides`. When hard parts would take most of the budget
+(LODs), bevels become chamfers, then go, then round shapes lose sides. Flat faces stay flat; in smooth styles bevel
+bands shade round and designed edges stay crisp.
+
+```yaml
+  - box: { at: [0, 0.3, 0], size: [0.6, 0.6, 0.6] }      # a crate
+    color: wood
+    chamfer: 0.03
+  - cylinder: { at: [0.7, 0.26, 0.9], radius: 0.26, height: 0.1, sides: 8, rotate: [0, 0, 90] }   # a wheel
+    color: wood_dark
+```
+
+### Hardware
+
+Written like a shape, each stands for several ordinary parts (hard by default); the part's other fields (colour,
+material, id, mirror, ...) go to each.
+
+| hardware | meaning |
+|---|---|
+| `rivets: { count: 8, along: [[x, y, z], ...], size: 0.03 }` | rivets evenly along a path (model space, ends included); or `around: { center, radius, axis: y }` in a ring |
+| `band: { fit: body, at: [0, 0.12, 0], width: 0.05, thickness: 0.012, axis: y }` | an iron band round an earlier part's surface at `at` (or `radius:` instead of `fit`): barrels, doors, posts |
+| `planks: { size: [1, 2, 0.08], count: 5, gap: 0.015, axis: x, jitter: 0.05, seed: 1 }` | boards side by side along `axis` with gaps, chamfered; `jitter` shortens each by up to that share of its length (with `at`, `rotate`) |
+| `bolt: { at: [x, y, z], radius: 0.02, length: 0.02 }` | a hex bolt head along y (rotate it) |
+| `slit: { at: [x, y, z], size: [0.3, 0.04, 0.3] }` | a cut: visor and arrow slits |
+
 ### Patterns
 
 ```yaml
     pattern: { type: stripes, color: gold, size: 0.06, width: 0.3, axis: y }
+    # several: a list, painted in order (each over the last); frame: part = axes and `at` in the part's own frame
+    # (they follow rotate/aim): pattern: [{ type: stripes, ..., frame: part }, { type: band, ..., frame: part }]
 ```
 
 - `stripes`: bands across `axis`, one every `size` metres, `width` = fraction in the second colour.
@@ -181,13 +233,74 @@ skin: soft
 - `skin: rigid`: each id is a separate mesh node that moves as one piece.
 - `skin: soft`: one skinned mesh; weights come from each part's distance, so blended joints bend smoothly.
   `separate: true` makes a part its own closed, rigid mesh (detachable things): it may overlap the body (a helmet
-  on a head) without fusing, and removing it leaves no hole.
+  on a head) without fusing, and removing it leaves no hole. `under: { color: hair }` (with `separate: true`) paints
+  the body where the part covers it (hair under a helmet; `material`, `gap`: how far from it still counts, 0.02 m),
+  seen once it falls off. Check with `kiln preview <model> --detach`.
 - `meta`: plain values or flat lists (points: `[x, y, z]`, model space) for game code: Godot node metadata
   (`get_meta("extras")`; on soft skins, bone metadata: `skeleton.get_bone_meta(i, "extras")`) and the manifest.
   Mirrored twins get the same meta (not mirrored).
 - `sockets`: named points on the part (model space, as built): a muzzle, a hand slot, a trebuchet's load. Each is an
   empty child node `<id>_<name>` that moves with the part (Godot: a Node3D under a BoneAttachment3D on soft skins), and
   the manifest gives its position and its offset from the pivot. Mirrored twins get mirrored sockets.
+
+## Template library
+
+`kiln library` lists KILN's own templates: bodies (`body_slim`, `body_stocky`, `body_big`: standard joints, layered
+clothes, gloves, boots, a `grip` socket per hand), heads (`head_young`, `head_old`, `head_bearded`, `head_stern`,
+`head_goofy`, `head_female`), helmets (`helmet_kettle`, `helmet_nasal`, `helmet_barbute`, `helmet_great`,
+`helmet_sallet`, `helmet_crown`: detachable, fitted to whatever head they go on) and armour (`armour_breastplate`,
+`armour_pauldrons`, `armour_gauntlets`, `armour_cape`, `armour_hood`: shells fitted to the body). Combine them:
+
+```yaml
+name: sergeant
+class: character
+extends: [body_stocky, head_bearded, helmet_nasal, armour_cape]   # in order; a project template of the same name wins
+variants: { blue: { swap: { cloth_red: cloth_blue } } }
+animations:
+  walk: { import: imports/Rig_Medium_MovementBasic.glb, clip: Walking_A }
+```
+
+or `kiln new model sergeant --extends body_stocky,head_bearded,helmet_nasal,armour_cape`. Their colours are the
+library palette `people` (found without copying; copy it into palettes/ to change it). `extends` takes a list (bases
+combine in order); `cut: <id>` cuts only that id (a helmet's face opening, not the face); `fit: { to: [ids] }` wraps
+several parts. Fitted shells are their own meshes.
+
+## Humanoids and clip libraries
+
+`skeleton: humanoid` names a character's parts after the standard joints: `hips`, `spine`, `chest`, `head`,
+`upperarm_l`, `lowerarm_l`, `hand_l`, `upperleg_l`, `lowerleg_l`, `foot_l` (and `_r`, usually by `mirror_id`;
+optional `toes_l/_r`). Parents come from the standard hierarchy and pivots default to the joints (limbs at their end
+nearest the parent; spine, chest, head at their bottom); give `rig:` pivots where that guess is off. Skin defaults to
+soft. The manifest maps each joint to its KayKit, Mixamo and Godot SkeletonProfileHumanoid name.
+
+Then any CC0 clip library on the same joints (KayKit Character Animations' `Rig_Medium_*.glb`: Idle_A, Walking_A,
+Running_A, Death_A, Hit_A, Throw, Jump_*, ... ~80 clips) plays on the character, retargeted when it's built:
+
+```yaml
+animations:
+  walk:  { import: imports/Rig_Medium_MovementBasic.glb, clip: Walking_A }
+  death: { import: imports/Rig_Medium_General.glb, clip: Death_A, loop: false, fps: 30, speed: 1 }
+```
+
+Each bone points where the clip's bone points (the clip's rest pose may be a T-pose; yours can be anything), bone
+lengths stay yours, and the hips move by the clip's motion scaled to your hip height. Check with `--pose <name>`.
+
+## Attachments for CC0 characters
+
+A helmet, shield or banner made around a CC0 character (a KayKit Knight) instead of a KILN body:
+
+```yaml
+fit_to: { file: imports/Knight.glb, bone: head, meshes: [Knight_Head] }   # meshes: which ones to fit (default all)
+parts:
+  - sphere: { at: [0, 1.62, 0], radius: 0.8 }        # the coverage: where the helmet reaches
+    shell: { thickness: 0.04, open: -y }
+    fit: { to: target, gap: 0.015 }                   # wraps the character's own head, 1.5 cm off it
+```
+
+The model is made in the character file's space (its units); the glb is exported in the bone's space (root node
+`<model>_on_<bone>`), so the game hangs it on that bone (Godot: a BoneAttachment3D); the manifest says `attach: { file,
+bone }`. W113 warns when it sinks into the character. `kiln preview <model> --fit` shows it on the character and the
+character without it.
 
 ## Animations
 
@@ -283,31 +396,48 @@ sun_color = "#fff6e8"
 shadows = true
 fog = 0.0
 fog_color = "#c8d8e8"
+rim_light = 0.0                # an added fresnel rim on every surface (Godot: a next pass; previews too): 0.5-1 reads on bright skies
+rim_light_color = "#ffffff"
+rim_light_power = 3.0          # higher: thinner rim
 ```
 
 ## Lint
 
 Errors: E000 usage/config, E001 file/YAML, E002 unknown field, E003 bad value, E004 unknown colour, E005 unknown
 material, E006 style problem, E007 rig problem, E008 animation problem, E009 nothing to mesh, E010 import file
-problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id).
+problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id),
+E013 the built mesh has open edges (cracks: a KILN bug; report it).
 
 Warnings: W101 part has no visible surface, W102 part thinner than the mesh resolution, W103 separate pieces,
 W104 colour not in the palette, W106 not standing on y = 0, W107 made under an older style_version, W108 size
 unusual for the class, W109 animated part without a pivot, W110 well over the triangle budget (patterns cost
 triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
-part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`).
+part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
+W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
 Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`. Lint meshes models in parallel
 (`KILN_JOBS` processes, default: every core) and caches them for build and previews.
 
 ## Commands
 
 `kiln init [dir] --style soft_toy` · `kiln new model <name> --template bean|prop|empty --class C` ·
-`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--engine] [--variant V]` ·
+`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--engine] [--variant V]` ·
 `kiln lineup [models]` · `kiln gallery` · `kiln build [--verify-godot]` · `kiln status` ·
 `kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
 `kiln config show|get|set` · `kiln import <file> --licence L` · `kiln credits` · `kiln doctor` ·
 `kiln skill install` · `kiln mcp`. Every command takes `--json` (before or after the command). `--closeup` takes a part
 id (`root` = parts without one) or a part's number in the file (`--closeup 3`).
+`kiln preview <model> --vs <ref.glb|ref.gltf> [--ref-height METRES]`: the model against a reference mesh (a CC0
+pack item, kept as it is: its own colours and normals) at one scale (same pixels per metre, both on y = 0, centred
+on each other), in the style's lighting: `previews/<model>/vs_<ref>.png` with paired turntable rows (reference above
+the model; from below, eye level, above), the top fifth (head region) close up, and the silhouette difference per
+view. `--ref-height` scales the reference to that height (default: its own units). Metrics (printed, and in `--json`
+under `compare`): `iou` (mean silhouette IoU of 8 views: front, front-left, left, back-left at +10 degrees, front and
+left at +50, top, below at -30; 1.0 = same outline), `iou_min`, `iou_views`, `triangle_ratio` (model / reference),
+and for `model` and `reference`: `triangles`, `surfaces` (glTF primitives drawn = draw calls; for the model what
+`kiln build` writes), `materials`, `colors` (distinct base colours on faces; a textured reference counts each face's
+sampled colour), `facet_regularity` (share of surface area in triangles with an edge neighbour facing the same way
+within 2 degrees: flat designed facets near 1, smooth or noisily decimated surfaces near 0), `open_edges` (cracks),
+`size` (metres). All deterministic. Without a path, `--vs` shows the style's inspiration images.
 
 ## Build output
 
@@ -322,6 +452,20 @@ cocked when the animation starts). With `vertex_colors = true`, a game loading t
 `vertex_color_use_as_albedo = true` on the imported materials (KILN's .tscn scenes do it); variants are then swap
 tables for the game (or `variant_glbs = true`). KILN's .tscn scripts share their materials between instances and
 leave any surface override the game set before `add_child` alone.
+
+**Palette atlas** (`atlas = true`; not with `vertex_colors`): every (colour, material preset) pair gets a 4x4-pixel
+cell in `models/<name>.palette.png` (colours), `<name>.material.png` (glTF metallicRoughness: G = roughness,
+B = metallic), `<name>.glow.png` (emission, only when a preset glows) and, with "godot", `<name>.rim.png` (Godot rim
+light: R = rim, G = tint). The glb references them by URI (next to it) and every face's UVs sit on its cell's centre;
+samplers are NEAREST without mipmaps. One material for the whole model: 1 surface per mesh (2 where a decal is), soft
+or rigid skins alike (rigid parts are nodes sharing the material). A variant is a texture swap:
+`<name>.<variant>.palette.png` (+ `.glow.png`), same cells, same mesh; its Godot scene is the base glb with the
+variant's textures (variant glbs are still written unless `variant_glbs = false`). Manifest per model: `atlas`
+(`palette`, `material`, `glow`, `rim`, `size`, `cell`, `cells`: `color`, `material`, `uv`, `pixel`; `ao`), variants
+also `palette` (+ `glow`): to recolour at runtime, write other colours into a copy of the palette at the cells'
+pixels. `atlas_ao = true` bakes ambient occlusion from the model's distance field (imported models: from the mesh's
+dents) into COLOR_0, a grey multiplier glTF viewers apply; in Godot only KILN's .tscn scenes use it
+(`vertex_color_use_as_albedo`). Previews don't show it.
 `kiln build --verify-godot` checks everything in a throwaway copy of the output (nothing else in the game's project is
 imported or touched).
 
