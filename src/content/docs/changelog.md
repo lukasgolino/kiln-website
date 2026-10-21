@@ -6,6 +6,55 @@ before 1.0).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-21
+
+LOOSE report 44-58, now GitHub issues #1-#14: shared clips, merged rigid skins, revealed parts, Godot import
+settings, partial builds, and E013 crack fixes. Hard-surface and humanoid output changes (meshes, pivots).
+
+### Added
+
+- `revealed: [ids]` on a rig entry (#3): a part shown only once one of those parts is gone (stump caps). It is
+  its own piece, hidden by KILN's .tscn scenes, marked `kiln_revealed_by` in the glb and `revealed_by` in the
+  manifest; `--verify-godot` checks it starts hidden.
+- `merge_rigid = true` in kiln.toml (#9): a rigid skin is exported as one skinned mesh, every vertex 100% on its
+  part's bone (rigid look, one draw call instead of one per id); `separate` parts stay their own nodes. Hide a part by
+  scaling its bone to 0. Manifest: `merged_rigid`.
+- Shared clips (#5): `animations_only: true` makes a model a clip carrier; `animation_library: <carrier>` on another
+  model plays its animations (same part ids: E008; joints over 1 cm away from the carrier's: W114) and its glb
+  carries no clips. Manifest: `animation_library`, `animations_only`. With "godot" the carrier is imported as an
+  AnimationLibrary (no `.tscn`); `--verify-godot` checks it.
+- Godot import settings (#14): with "godot", palette atlas textures get `.import` settings (lossless, no mipmaps, no
+  VRAM compression on first 3D use) and clip carriers the animation_library importer; what Godot adds later is kept.
+  `--verify-godot` imports with them.
+- `node_prefix: Knight_` on a model: mesh nodes are `Knight_<id>` children of their parts' nodes (a soft skin's mesh
+  is `Knight_mesh`); bones and animations keep the part ids. Manifest: `node_prefix`, `mesh_node` per part (#7).
+- Animation names may use capitals (`Idle_A`: imported clips keep their library names); names differing only in
+  case are E008 (#4).
+- `kiln build <models>` (MCP `build` models): builds only those; the other models keep what the last build wrote,
+  so one broken model doesn't block the rest (#13).
+- `kiln preview --vs <ref.glb>` metrics for restyles (#8): `band_iou`/`band_ious` (silhouette IoU per body band,
+  each band normalised; head/torso/legs for humanoids against a rigged reference, else thirds), `mass`/`mass_ref`/
+  `mass_ratio` (visual mass), `screen_px`; the sheet gains a row at 30 m and 60 m (60 degree FOV, 1080 px screen).
+
+### Fixed
+
+- Default `skeleton: humanoid` pivots sit on the joints: a capsule (cylinder, cone, tube) limb pivots at its axis
+  end, not the top of its rounded box (upper legs were 8 cm above the hip, upper arms at the top of a shoulder ball);
+  hands, feet and toes where the limb above them ends (wrist, ankle; feet were at the heel) (#6).
+- Hard-surface CSG cracked (E013) where near-coplanar facets of several parts meet (a faceted skull, jaw and hair):
+  each union, cut and intersect built its BSP trees from only the polygons near the other solid. The trees are now
+  built from whole solids; only the nearby polygons are clipped (#2).
+- Soft parts blended at one spot (a straw tuft of capsules) bulge out of their boxes by up to a quarter of the blend
+  per join; where that left the sampling grid, the mesh had a hole (E013). The grid grows on any side the surface
+  reaches (#11).
+- Bands and stripes (model space) on hard parts are cut along their border planes on the exact faces, without
+  refining the mesh first: three bands on a stepped hard lathe went from 30x the budget to its cuts (#12). A colour
+  border through a vertex no longer leaves zero-area slivers there.
+- E013 lists each crack with its place and parts (up to five), not one centroid of all of them (#10).
+- Hard `lathe` parts take `shell:`, and `open: -y`/`+y` on a lathe cuts just its end wall (the profile sits anywhere
+  on its axis; before, it cut at local y = 0): hollow hard helmets with a visible rim (#1). Hard parts no longer get
+  W102 (thinner than the mesh resolution): they're exact polygons.
+
 ## [0.7.1] - 2026-10-21
 
 ### Added
@@ -106,7 +155,7 @@ the template library (M4).
 
 ## [0.4.0] - 2026-10-21
 
-Toward CC0 parity (CC0_PARITY_PLAN.md, from LOOSE_REPORT.md items 23-25).
+Toward CC0 parity (from the LOOSE! dogfooding report, items 23-25).
 
 ### Added
 
@@ -145,7 +194,7 @@ Toward CC0 parity (CC0_PARITY_PLAN.md, from LOOSE_REPORT.md items 23-25).
 
 ## [0.3.0] - 2026-10-20
 
-From the LOOSE! dogfooding report (LOOSE_REPORT.md, items 1-22).
+From the LOOSE! dogfooding report (items 1-22).
 
 ### Added
 
@@ -245,7 +294,8 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/lukasgolino/KILN/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/lukasgolino/KILN/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/lukasgolino/KILN/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/lukasgolino/KILN/compare/v0.5.0...v0.6.0

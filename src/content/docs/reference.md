@@ -24,6 +24,8 @@ preview_dir = "previews"
 export = ["glb", "godot"]
 style_version = 1
 variant_glbs = true            # false: no .glb per variant; Godot gets <name>.<variant>.tscn recolouring the base glb
+merge_rigid = false            # true: a rigid skin is one skinned mesh (one draw call; every vertex 100% on its part's bone;
+                               #   separate parts stay nodes; hide a part by scaling its bone to 0); manifest merged_rigid
 vertex_colors = false          # true: colours in the vertices, one surface per material preset (fewer draw calls)
 atlas = false                  # true: one material per model from small palette textures (1 surface, 2 with decals)
 atlas_ao = false               # true (with atlas): ambient occlusion baked into the vertex colours
@@ -46,6 +48,10 @@ budget: 6000                   # optional: triangles (overrides the style's budg
 lod: [2500, 800]               # optional: extra lower-detail .glb files
 origin: center                 # optional: the .glb's origin: base (bottom centre of the box) | center (spinning debris) | [x, y, z]
                                #   (default: model space as written; manifest `origin` = that point, other manifest values stay model space)
+node_prefix: Knight_           # optional: mesh nodes are Knight_<id> children of the part nodes (bones keep the ids;
+                               # a soft skin's mesh is Knight_mesh); manifest parts get mesh_node
+animation_library: soldier_anims # optional: play that clip carrier's animations (its glb has them; this one none)
+animations_only: true          # optional: this model is a clip carrier for others' animation_library
 parts: [...]                   # the shapes (below)
 rig: {...}                     # optional: bones (below)
 skin: soft                     # none (static) | rigid | soft; default rigid when there is a rig
@@ -236,6 +242,10 @@ skin: soft
   on a head) without fusing, and removing it leaves no hole. `under: { color: hair }` (with `separate: true`) paints
   the body where the part covers it (hair under a helmet; `material`, `gap`: how far from it still counts, 0.02 m),
   seen once it falls off. Check with `kiln preview <model> --detach`.
+- `revealed: [arm_l]`: a part shown only once one of those is gone (a stump cap at the shoulder, under a
+  detachable arm). It is its own piece (separate), hidden by KILN's .tscn scenes, `kiln_revealed_by` in its node's
+  extras and `revealed_by` in the manifest's part: the game shows it when it removes the arm. Mirrored twins
+  are revealed by the twins (`arm_r`).
 - `meta`: plain values or flat lists (points: `[x, y, z]`, model space) for game code: Godot node metadata
   (`get_meta("extras")`; on soft skins, bone metadata: `skeleton.get_bone_meta(i, "extras")`) and the manifest.
   Mirrored twins get the same meta (not mirrored).
@@ -269,8 +279,9 @@ several parts. Fitted shells are their own meshes.
 
 `skeleton: humanoid` names a character's parts after the standard joints: `hips`, `spine`, `chest`, `head`,
 `upperarm_l`, `lowerarm_l`, `hand_l`, `upperleg_l`, `lowerleg_l`, `foot_l` (and `_r`, usually by `mirror_id`;
-optional `toes_l/_r`). Parents come from the standard hierarchy and pivots default to the joints (limbs at their end
-nearest the parent; spine, chest, head at their bottom); give `rig:` pivots where that guess is off. Skin defaults to
+optional `toes_l/_r`). Parents come from the standard hierarchy and pivots default to the joints (limbs at the end of
+their longest capsule/cylinder/cone/tube nearest the parent, else of their box; hands, feet and toes where the limb
+above them ends, on their own box: wrist, ankle; spine, chest, head at their bottom); give `rig:` pivots where that guess is off. Skin defaults to
 soft. The manifest maps each joint to its KayKit, Mixamo and Godot SkeletonProfileHumanoid name.
 
 Then any CC0 clip library on the same joints (KayKit Character Animations' `Rig_Medium_*.glb`: Idle_A, Walking_A,
@@ -333,6 +344,9 @@ The JSON: `format`, `duration`, `loop`, `seed`, `motion` (the formula), `emitter
 E011 when an emitted model doesn't exist.
 
 ## Animations
+
+Names are letters, digits, `_` or `-`, any case (imported clips can keep their library names: `Idle_A`); two names
+that differ only in case are an error.
 
 ```yaml
 animations:
@@ -444,6 +458,7 @@ unusual for the class, W109 animated part without a pivot, W110 well over the tr
 triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
 part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
 W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
+W114 (from `kiln build`) joints sit elsewhere than in the model's `animation_library`.
 Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`. Lint meshes models in parallel
 (`KILN_JOBS` processes, default: every core) and caches them for build and previews.
 
@@ -451,7 +466,7 @@ Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`.
 
 `kiln init [dir] --style soft_toy` · `kiln new model <name> --template bean|prop|empty --class C` ·
 `kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--effect] [--engine] [--variant V]` ·
-`kiln lineup [models]` · `kiln gallery` · `kiln build [--verify-godot]` · `kiln status` ·
+`kiln lineup [models]` · `kiln gallery` · `kiln build [models] [--verify-godot]` (named models only: the others keep their last output) · `kiln status` ·
 `kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
 `kiln config show|get|set` · `kiln import <file> --licence L` · `kiln credits` · `kiln doctor` ·
 `kiln skill install` · `kiln mcp`. Every command takes `--json` (before or after the command). `--closeup` takes a part
@@ -460,14 +475,21 @@ id (`root` = parts without one) or a part's number in the file (`--closeup 3`).
 pack item, kept as it is: its own colours and normals) at one scale (same pixels per metre, both on y = 0, centred
 on each other), in the style's lighting: `previews/<model>/vs_<ref>.png` with paired turntable rows (reference above
 the model; from below, eye level, above), the top fifth (head region) close up, and the silhouette difference per
-view. `--ref-height` scales the reference to that height (default: its own units). Metrics (printed, and in `--json`
+view, and both at gameplay distance (30 m and 60 m at a 60 degree vertical FOV on a 1080 px screen, the style's
+outline if it has one, upscaled nearest; an orthographic render at that scale). `--ref-height` scales the reference to that height (default: its own units). Metrics (printed, and in `--json`
 under `compare`): `iou` (mean silhouette IoU of 8 views: front, front-left, left, back-left at +10 degrees, front and
 left at +50, top, below at -30; 1.0 = same outline), `iou_min`, `iou_views`, `triangle_ratio` (model / reference),
 and for `model` and `reference`: `triangles`, `surfaces` (glTF primitives drawn = draw calls; for the model what
 `kiln build` writes), `materials`, `colors` (distinct base colours on faces; a textured reference counts each face's
 sampled colour), `facet_regularity` (share of surface area in triangles with an edge neighbour facing the same way
 within 2 degrees: flat designed facets near 1, smooth or noisily decimated surfaces near 0), `open_edges` (cracks),
-`size` (metres). All deterministic. Without a path, `--vs` shows the style's inspiration images.
+`size` (metres). For restyles (where proportions change on purpose):
+`band_iou` (mean of `band_ious`: silhouette IoU per body band in 4 side views at 0 degrees, each band cropped, scaled to
+one height and centred, so a big head on a short body still matches; `bands` = `humanoid` (`legs`/`torso`/`head` cut at
+the hips and head joints: a `skeleton: humanoid` model against a reference with `head` and `hips` nodes) or `thirds`
+(`bottom`/`middle`/`top`)), `mass` / `mass_ref` (visual mass: silhouette area / its bounding box, mean of the 8 views)
+and `mass_ratio` (model / reference), `screen_px` (height in pixels at 30 m and 60 m, model and reference). All
+deterministic. Without a path, `--vs` shows the style's inspiration images.
 
 ## Build output
 
@@ -495,7 +517,16 @@ variant's textures (variant glbs are still written unless `variant_glbs = false`
 also `palette` (+ `glow`): to recolour at runtime, write other colours into a copy of the palette at the cells'
 pixels. `atlas_ao = true` bakes ambient occlusion from the model's distance field (imported models: from the mesh's
 dents) into COLOR_0, a grey multiplier glTF viewers apply; in Godot only KILN's .tscn scenes use it
-(`vertex_color_use_as_albedo`). Previews don't show it.
+(`vertex_color_use_as_albedo`). Previews don't show it. With "godot", KILN writes the palette textures' `.import`
+settings (lossless, no mipmaps, no VRAM compression on first 3D use: 4x4 cells stay exact); settings Godot adds
+later (uid, imported files) are kept.
+
+**Shared clips**: `animations_only: true` makes a model a clip carrier (its animations are what counts; give it the
+same rig as the models that use it); `animation_library: <carrier>` on another model plays the carrier's animations
+(same part ids, E008 otherwise; joints more than 1 cm from the carrier's: W114, since a clip's position tracks put
+bones where the carrier has them). That model's glb carries no clips; previews and the manifest's `animations` still
+list them, plus `animation_library` (`model`, `glb`). With "godot" the carrier's glb is imported as an
+AnimationLibrary (no `.tscn`); add it to each model's AnimationPlayer.
 `kiln build --verify-godot` checks everything in a throwaway copy of the output (nothing else in the game's project is
 imported or touched).
 
