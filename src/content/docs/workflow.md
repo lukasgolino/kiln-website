@@ -69,7 +69,7 @@ Write the answers into BRIEF.md and STYLE.md.
   positions (hip, shoulder, hinge, axle). Without a pivot a part turns about its box centre (W109).
 - **Skin:** `rigid` (each part moves as one piece: robots, machines, props, toys) or `soft` (one mesh that bends
   where parts blend: creatures, bean characters). `separate: true` keeps a part rigid inside a soft skin
-  (detachable helmet).
+  (detachable helmet). Rigid joints that turn far (ragdolls): `union: per_bone`, so no turn opens the mesh.
 - **Animations:** explicit `poses` (one per frame, per part: offset/rotate/scale) or a `cycle` that writes the
   poses for you: walk, waddle, hop, bob, spin, swing, breathe, wave, chain (reference.md). Both together: the cycle
   moves everything, and parts named in the poses follow the poses (walking while carrying).
@@ -89,14 +89,14 @@ Write the answers into BRIEF.md and STYLE.md.
   `looks/<style>.tscn` (the look kit: sky, sun, tonemapper, SSAO, glow, grading). Tell the owner to instance the
   look kit once in each scene: half of the style is lighting.
 - `kiln build --verify-godot` loads everything in headless Godot (in a throwaway copy) and checks parts, animations
-  and materials.
+  and materials (and that attachments fitted to a CC0 character land on its bone).
 - Many team colours: `variant_glbs = false` in kiln.toml keeps one glb per model; each variant becomes a Godot scene
   that recolours it (and a `swap` table in the manifest for other engines).
 - Crowds (many instances): `vertex_colors = true` puts colours in the vertices, one surface per material preset,
   so a character costs 2-4 draw calls instead of one per colour.
 - Crowds, best: `atlas = true` gives every model one material (colours and presets in a small palette texture): 1 draw
   call per mesh (2 with a decal), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
-  baked ambient occlusion. Use it instead of `vertex_colors`.
+  baked ambient occlusion (a number 0..1 sets its strength). Use it instead of `vertex_colors`.
 - Warnings W111 (a part lost to the triangle budget) and W112 (a LOD well over its target) mean: raise the budget.
 - `kiln preview <name> --engine` renders through Godot itself (needs a display): use it to confirm the look.
 - `manifest.json` lists every model: glb, scene, size and bounds in metres, triangles, parts (pivot, parent, meta),

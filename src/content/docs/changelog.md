@@ -6,6 +6,123 @@ before 1.0).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-28
+
+Issues #66, #67, #70, #71 and #72: hard-surface and text fixes (E013 cracks and crowded edges, an E009 crash, a hang).
+
+### Fixed
+
+- Bevelled extrudes no longer crack where a bar is narrower than twice the bevel (text with overlapping contours, such
+  as a heavy serif S, and plain `path:`/`points` outlines alike): rings that would fold have their insets lowered just
+  around the fold (#66). Bevelled outlines that folded before change there; others are unchanged.
+- Interlocked hard parts (chain links with small turns) no longer fail E013 with faces back to back: CSG slivers
+  thinner than the weld whose outline folds over itself are dropped (#67).
+- A hard part beside loose hard links no longer fails with E009 "max() iterable argument is empty": a flat patch
+  with no outline is kept as it is (#70).
+- Text glyphs drawn as one self-crossing contour (Cinzel's 3 and 8) are filled nonzero like overlapping contours, so
+  they bevel without cracks (#71). Such glyphs change, bevelled or not.
+- Glyphs whose serif bars abut their strokes (Cinzel's X) fill as one piece and bevel without hanging (#72).
+
+## [0.11.0] - 2026-10-27
+
+Issues #31, #57, #60 and #61: effect previews show fade, the floor and chosen times; fitted shells no longer grow walls
+inside their target; two E013 (non-manifold) failures fixed.
+
+### Added
+
+- `kiln preview <model> --effect --at 0,0.1,0.25,0.5,1` (seconds) gives a contact sheet at those times instead of 8
+  evenly spaced frames (MCP `preview`: `at`, with `which='effect'`). Effect previews draw each piece's `fade` as ordered
+  dithering, and an effect with a `floor` gets the plane drawn as a thin grid (#31). Built output is unchanged.
+
+### Fixed
+
+- Two hard parts (a sphere and an aimed cone, a flared cone through a chamfered box) no longer fail E013 with two
+  zero-area faces back to back: points the CSG leaves a hair off an edge two flat patches share now count as straight
+  in both patches (#60). Hard-part meshes can change where this happened.
+- Smooth models with blended parts of different colours no longer fail E013 with crowded edges at a colour border:
+  vertices the simplifier puts exactly onto a border vertex are joined before projecting and relaxing (#61). Smooth
+  meshes can change where this happened.
+- Shells fitted to a CC0 mesh (`fit_to`, `fit: target`) no longer grow walls inside the target around its inner
+  pieces: the target's distance is signed per connected piece (angle-weighted pseudo-normals, min over pieces) and
+  points enclosed by a piece read inside (#57). Such shells change; cached ones rebuild.
+
+## [0.10.1] - 2026-10-26
+
+### Fixed
+
+- Atlas palette textures (and clip carriers) get KILN's Godot `.import` settings whenever the output is inside a
+  Godot project, not only with `export = ["godot"]`: a game that loads the glbs itself no longer gets VRAM-compressed,
+  blurred palette cells (#56).
+
+## [0.10.0] - 2026-10-26
+
+Issues #22-#25 and #50: `union: per_bone` for rigid skins, manifold meshes on thin parts, clean shell and sharp rims,
+template library fixes, adjustable baked AO, and attachments checked on their bone in Godot.
+
+### Added
+
+- `kiln build --verify-godot` hangs every attachment fitted to a CC0 character (`fit_to`) on its bone of a copy of that
+  character (BoneAttachment3D) and checks it lands where it was made (#22).
+- `atlas_ao` takes a strength 0..1 as well as `true` (0.65, unchanged): the darkest corner's colour is x (1 - strength);
+  the manifest's `atlas` gives it as `ao_strength` (#24).
+- `union: per_bone` on a rigid-skinned model (#50): each bone's parts are meshed as their own closed surface and
+  neighbouring bones overlap instead of being cut where they meet, so turning a joint (animations, ragdolls) can't
+  tear the mesh, with or without `merge_rigid`. Default `whole` (unchanged meshes). W103 counts the bones' pieces as
+  joined where they touch. `per_bone` on a soft or static skin is E007.
+
+### Fixed
+
+- Template library (#23): heads have a neck reaching into the collar, so a helmet no longer leaves the head a separate
+  piece (W103) on some grids; `helmet_great` reaches from the shoulders to above every hairstyle (hair poked through
+  its top) and `helmet_crown` is a ring open at both ends (its closed bottom crossed the head); `body_big`'s collar sits
+  on its chest instead of inside it and its hidden spine capsule is gone (W101).
+- Thin soft parts and narrow gaps no longer pinch (#25): dual contouring gives a cell one vertex per sheet of the
+  surface crossing it (both sides of a wall thinner than a cell used to share one: edges with four faces), and where
+  decimation joins the two sides of a thin part the vertex is split back into one per side. E013 now also reports
+  edges with more than two faces and points where two sheets touch, not only open edges.
+- Smooth shells shade cleanly at their rims (#25): a crisp corner's normal is sampled just off its face, so it no
+  longer picks up the rim's normal (dark wedges along helmet and bowl rims).
+- Thin sharp rims (a cone roof overhanging its tower) reach their edge instead of coming out ragged (#25): crossing
+  points are found on the surface rather than interpolated linearly, and a best-fit point just beyond its cell is
+  kept where it lies on the surface.
+
+## [0.9.0] - 2026-10-21
+
+Issues #28-#37: font text that holds together (nonzero fill, variable fonts, thin bevels), effect floors, gib pieces,
+mixed loadouts on shared clips, retarget adjustments, and preview fixes.
+
+### Added
+
+- `font_axes: { wght: 900 }` on text extrudes picks a variable font's instance (any axis), so no pre-instanced copy of the
+  font is needed (#29).
+- Effect `floor: y`: debris bounces (`bounce`, `friction` per emitter) and settles (`settle`) on it instead of falling
+  through; every floor hit is rolled into the effect JSON (`hits`: age, position, velocity), so players and `preview
+  --effect` match (#31).
+- Imported (retargeted) animations take `retarget: { keep: { joint: share }, offset: { joint: [x, y, z] } }`: damp a
+  joint's turn away from rest (base names cover both sides) and add a fixed turn, for clips made for another body
+  type (#34).
+- `gib: true | [ids]` on a rig entry: `kiln build` also writes `models/<name>.gib.<id>.glb`, the part (and what hangs
+  from it) as one closed static piece in the model's frame, for parts that come off; manifest `gibs` (#35).
+
+### Changed
+
+- `animation_library` no longer needs exactly the same part ids: every id the carrier's clips move must be in the model,
+  other ids may differ (mixed loadouts: helmet, hat, shield follow their parents) (#33).
+
+### Fixed
+
+- `bevel`/`chamfer` (and a shrinking `offset`) on an extrude whose outline has sections thinner than about twice the
+  bevel (font serifs, hairlines) no longer cracks (E013): the inset is limited per vertex to what fits there (#28).
+- E013 names the colour of a crack on a hex-coloured part instead of an empty name (#28).
+- Text extrudes fill glyphs by the nonzero rule, like font renderers: overlapping contours (static instances of
+  variable fonts, many hand-made fonts) join instead of being cut out, so letters no longer fall apart (W103), mesh
+  slowly or crack with bevels. Fonts without overlaps give the same outlines as before; SVG `path:` stays even-odd (#29).
+- `kiln build` removes decal textures Godot extracted from a glb (`models/<name>_decal<N>_<hex>.png` and its `.import`)
+  once no glb embeds that image any more (the colour changed, or the model is gone) (#32).
+- `kiln preview --vs` counts `surfaces` and `materials` as `kiln build` writes them, with `atlas` on too (#36).
+- Previews (turntable, `--closeup`, `--pose`, lineup, gallery, `--vs`) leave out `revealed` parts, as the exported
+  scenes do; `--detach` shows a part's cap once it's taken off (#37).
+
 ## [0.8.0] - 2026-10-21
 
 LOOSE report 44-58, now GitHub issues #1-#14: shared clips, merged rigid skins, revealed parts, Godot import
@@ -61,7 +178,7 @@ settings, partial builds, and E013 crack fixes. Hard-surface and humanoid output
 
 - The skill asks agents to report what got in their way (crashes, misleading messages, workarounds, missing
   features) as GitHub issues at https://github.com/lukasgolino/KILN/issues: a minimal-repro draft, a duplicate
-  check, and filing only with the user's OK. `.github/ISSUE_TEMPLATE/agent-report.md` and the `agent-report` label.
+  check, and filing only once approved. `.github/ISSUE_TEMPLATE/agent-report.md` and the `agent-report` label.
   Run `kiln skill install` to update a project's copy of the skill.
 
 ### Fixed
@@ -180,7 +297,7 @@ Toward CC0 parity (from the LOOSE! dogfooding report, items 23-25).
   metrics (printed and under `compare` in `--json`): silhouette IoU over 8 views, triangles and their ratio, surfaces,
   materials, colours, facet regularity and open edges of both. `--vs` without a path still shows the inspiration
   images. The MCP `preview` tool takes `reference` and `ref_height` with `which: "vs"`.
-- Skill: a "match a reference" workflow (iterate until the metrics are inside the owner's thresholds).
+- Skill: a "match a reference" workflow (iterate until the metrics are inside the agreed thresholds).
 
 ### Fixed
 
@@ -294,7 +411,12 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/lukasgolino/KILN/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/lukasgolino/KILN/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/lukasgolino/KILN/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/lukasgolino/KILN/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/lukasgolino/KILN/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/lukasgolino/KILN/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/lukasgolino/KILN/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/lukasgolino/KILN/compare/v0.6.0...v0.7.0
