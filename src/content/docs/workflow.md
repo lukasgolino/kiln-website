@@ -53,7 +53,8 @@ Write the answers into BRIEF.md and STYLE.md.
    model has detachable (`separate`) parts: each one off, and what's under it. Iterate until it's right.
    You will misjudge proportions without looking: always look.
    For people, start from the template library (`kiln library`; `extends: [body_..., head_..., helmet_..., armour_...]`)
-   and add or override parts, instead of building bodies and faces from scratch.
+   and add or override parts, instead of building bodies and faces from scratch. To hide the head's hair under a
+   helmet (its own piece, shown again when the helmet comes off): `rig: { hair: { parent: head, revealed: [helmet], fold: true } }`.
 6. **Fit with the rest:** `kiln lineup` (same scale, one ground line, a 1 m bar) and `kiln preview <name> --vs`
    (beside the inspiration images). Does it look like it belongs in the same game?
 7. **Report** to the owner with the preview images. When they approve: `kiln mark <name> --approved`, tick it in
@@ -73,6 +74,9 @@ Write the answers into BRIEF.md and STYLE.md.
 - **Animations:** explicit `poses` (one per frame, per part: offset/rotate/scale) or a `cycle` that writes the
   poses for you: walk, waddle, hop, bob, spin, swing, breathe, wave, chain (reference.md). Both together: the cycle
   moves everything, and parts named in the poses follow the poses (walking while carrying).
+- **CC0 clip libraries:** a `skeleton: humanoid` character plays imported clips
+  (`walk: { import: imports/clips.glb, clip: Walking_A }`); any other skeleton (quadrupeds, birds) plays them through
+  `skeleton: { map: { <part id>: <clip joint>, ... }, root_motion: <clip joint> }` (reference.md, "Clips on any skeleton").
 - **Cloth and flags:** split them into 3-4 segments along their length, each its own id parented to the previous one
   (pivots on the seams), crisp seams (`blend: 0`), `skin: soft`, and animate with `cycle: { type: chain, parts: [...] }`. Check every animation with
   `kiln preview <name> --pose <animation>`: the filmstrip shows each frame from the front and the side.
@@ -98,15 +102,29 @@ Write the answers into BRIEF.md and STYLE.md.
   call per mesh (2 with a decal), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
   baked ambient occlusion (a number 0..1 sets its strength). Use it instead of `vertex_colors`.
 - Warnings W111 (a part lost to the triangle budget) and W112 (a LOD well over its target) mean: raise the budget.
+- Ground for a level: a model with `terrain:` instead of `parts:` (hills, ridges, plateaus, noise and paths combined in
+  order; up to 4 splat layers of palette colours by slope, height, nearness to paths and noise; see reference.md,
+  Terrains). It builds chunked LOD glbs, a splat map and a Godot scene with a HeightMapShape3D; `kiln preview <name>`
+  shows it from above and four sides. Place things on it from Python with `kiln.terrain.load(project, name)`
+  (`height`, `normal`, `slope`, `splat` at any x, z).
+- Foliage and props over ground: a model with `scatter:` (see reference.md, Scatters) places other models (grass,
+  flowers, rocks, trees; one mesh each, small budgets) over a terrain, another model's top or a flat area by density,
+  spacing and rules (slope, height, noise patches, splat layers, paths), with random turn, scale, lean and tint. It
+  builds `<name>.scatter.json` and a Godot scene of MultiMeshes (with LODs and a fade-out distance); `kiln preview
+  <name>` shows it. Lint W118/W119: too many / no instances.
 - `kiln preview <name> --engine` renders through Godot itself (needs a display): use it to confirm the look.
 - `manifest.json` lists every model: glb, scene, size and bounds in metres, triangles, parts (pivot, parent, meta),
   animations (Godot names, loop, fps), variants, LODs, licences. That's the contract with game code.
+- Not Godot: `export = ["glb"]`; the per-engine notes (Unity, Unreal, Bevy, three.js, Defold) are in KILN's
+  `docs/engines.md` (https://github.com/lukasgolino/KILN/blob/main/docs/engines.md). Outside Godot `atlas = true` is
+  usually the best colour mode; look kits, toon, outlines and rim light are Godot-only.
 
 ## 5. Styles and inspirations
 
 A style (`styles/<name>.style.toml`, usually `extends = "soft_toy"` or another preset) decides: smooth or faceted
 (`[shape]`), mesh resolution, triangle budgets per class, material presets (roughness, metal, glow, rim) and the
-look kit (`[look]`: shader standard/toon, outline, tonemapper, exposure, saturation, contrast, SSAO, glow, sky,
+look kit (`[look]`: shader standard/toon (bands, softness, shadow colour, specular, banded shadows), outline
+(metres or pixels, one colour or each part's darkened), tonemapper, exposure, saturation, contrast, SSAO, glow, sky,
 sun, fog). The `notes` field holds the shape language and proportions in words: write it, and follow it.
 
 From inspirations: look at the images; describe shapes (rounded? chunky? faceted?), proportions (head size, limb
@@ -132,7 +150,14 @@ For things text does badly (dense foliage, realistic rocks, detailed props), use
 Quaternius (CC0), Poly Pizza (CC0/CC-BY). `kiln import <file.glb> --licence CC0-1.0 --author ... --url ...
 --height 2.5` copies it into `imports/`, writes a model with `source:`; the build scales it, stands it on the
 ground, snaps its colours to the palette and applies the style's materials. `kiln credits` and `CREDITS.md` list
-authors. Never use assets whose licence forbids it (NC, ND, SA, Synty, anything "no AI").
+authors. Never use assets whose licence forbids it (NC, ND, SA, Synty, anything "no AI"). An .fbx/.blend/.obj
+imports the same way when Blender 4.x is installed (`BLENDER=/path/to/blender`): `kiln import` turns it into
+`imports/<name>.glb` once, so prefer that over naming the .fbx in `source:` (every build would need Blender).
+
+Shipped CC0 packs: `kiln pack list`; the owner mirrors one with `kiln pack add <pack>` (it downloads; ask first).
+`kiln pack search knight --json` (MCP `pack_search`, `lineup: true` for a sheet of the hits) finds models by name and
+tags with triangles and size; `kiln pack import <pack> <name> --height 1.8` (MCP `pack_import`) copies it into
+`imports/<pack>/` and records it in `kiln.lock`, which the build checks (E014: a changed file, a non-CC0 licence).
 
 **Match a reference** (make a KILN model that holds its own next to a CC0 asset, e.g. a KayKit barrel):
 1. Put the reference in `imports/` and ask the owner for thresholds, with defaults: silhouette `iou` >= 0.9 (and

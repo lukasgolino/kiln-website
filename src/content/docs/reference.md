@@ -29,6 +29,8 @@ merge_rigid = false            # true: a rigid skin is one skinned mesh (one dra
 vertex_colors = false          # true: colours in the vertices, one surface per material preset (fewer draw calls)
 atlas = false                  # true: one material per model from small palette textures (1 surface, 2 with decals)
 atlas_ao = false               # true or a strength 0..1 (with atlas): ambient occlusion baked into the vertex colours
+godot_bonemap = false          # true: humanoids get models/<name>.bonemap.tres in their glb's .import; Godot RENAMES
+                               #   their bones to SkeletonProfileHumanoid's (see Humanoids)
 [lint]
 disable = ["W106"]
 ```
@@ -251,6 +253,11 @@ skin: soft
   extras and `revealed_by` in the manifest's part: the game shows it when it removes the arm. Mirrored twins
   are revealed by the twins (`arm_r`). Previews (and `--vs`) leave it out like the game does; `--detach` shows it
   under the part taken off.
+- `fold: true` (with `parent`): while none of its `revealed` parts is in the model, the part folds into its parent:
+  its parts take the parent's id (and blend with it) and the entry goes, as if it had no id of its own; with one
+  there, it's an ordinary revealed part. Without `revealed` it always folds: the library heads rig their hair
+  `hair: { parent: head, fold: true }` (one `head`, as before the hair had an id), and a model opts in to hiding it
+  under a helmet with `hair: { parent: head, revealed: [helmet], fold: true }` (see Template library).
 - `gib: true` (or `gib: [upperarm_l, lowerarm_l, hand_l]`): the part comes off as a piece of its own. Besides the model,
   `kiln build` writes `models/<name>.gib.<id>.glb`: that part (and, with `true`, every part hanging from it) meshed on
   its own, so it's closed where it met the body; static, at rest, in the model's frame (same origin as the model's glb),
@@ -285,6 +292,17 @@ library palette `people` (found without copying; copy it into palettes/ to chang
 combine in order); `cut: <id>` cuts only that id (a helmet's face opening, not the face); `fit: { to: [ids] }` wraps
 several parts. Fitted shells are their own meshes.
 
+The heads' hair is the id `hair`, folded into `head` (`fold: true`, see Rig and skin), so helmets fit over it and
+follow its lumps. To hide it under the helmet instead (as KayKit's helmets replace the hair), add to the model:
+
+```yaml
+rig:
+  hair: { parent: head, revealed: [helmet], fold: true }   # hair hidden until the helmet (id helmet) comes off
+```
+
+The hair is then its own piece, hidden by the scenes and previews until the helmet comes off, and the helmet fits the
+skull (`to: head`). Without a helmet it folds back into `head`. Leave it out for a crown (worn over the hair).
+
 ## Humanoids and clip libraries
 
 `skeleton: humanoid` names a character's parts after the standard joints: `hips`, `spine`, `chest`, `head`,
@@ -310,6 +328,58 @@ Clips made for another body type (KayKit's are chibi: splayed arms, deep knee be
 animation: `retarget: { keep: { upperarm: 0.35, lowerleg: 0.5 }, offset: { upperarm_l: [0, 0, 12] } }`. `keep` is the
 share of each joint's turn away from rest it keeps (0 = held at rest, 1 = as the clip; a base name like `upperarm`
 covers both sides; children follow), `offset` a fixed turn in degrees (model axes) added on top.
+
+`godot_bonemap = true` (kiln.toml, off by default; output inside a Godot project) writes `models/<name>.bonemap.tres`
+for each humanoid with a skeleton in its glb (soft skins; rigid ones with `merge_rigid`), clip carriers included: a
+`BoneMap` on `SkeletonProfileHumanoid` from the manifest's names (`root` -> `Root`, `hips` -> `Hips`, `upperleg_l` ->
+`LeftUpperLeg`, ...), and points the glb's `.import` at it (`_subresources` -> `PATH:Skeleton3D` ->
+`retarget/bone_map`; the rest of the sidecar stays). Godot then retargets on import: any humanoid clip made for the
+profile (Mixamo, Godot's own retargeted libraries) plays on the character with no renaming in the game. The glb itself
+doesn't change, but in Godot **the bones take the profile's names** (`Hips`, `LeftUpperLeg`; unmapped bones keep
+theirs), the skeleton node becomes `%GeneralSkeleton`, and clip tracks follow: node paths, `find_bone("hips")` and
+BoneAttachment3D names in game code must use the new names (manifest `humanoid` has them; the entry says
+`godot_bonemap`). Use it for a new game or one sharing clips with other humanoids; leave it off where code already
+names KILN's bones. Turning it off removes the files and the `.import` setting again (Godot reimports with KILN's
+names).
+
+### Clips on any skeleton (joint map)
+
+A creature that isn't a humanoid (a quadruped, a bird) plays a clip library made for another armature through a
+map from its part ids (bones) to the clip's joints:
+
+```yaml
+skin: rigid
+rig: { body: { pivot: [0, 0.5, 0] }, neck: { pivot: [0, 0.55, 0.3], parent: body }, head: { parent: neck }, ... }
+skeleton:
+  map:
+    body: Torso2
+    neck: { joint: Neck1, child: head }        # child: the bone whose direction aims this one
+    head: Head
+    fl_up_l: { joint: FrontUpperLeg.L, child: fl_low_l }
+    fl_low_l: FrontLowerLeg.L
+    tail1: { joint: Tail1, child: tail2 }
+    tail2: Tail4
+  root_motion: Torso   # the clip joint whose movement moves the model
+animations:
+  walk: { import: imports/Horse.glb, clip: Walk, retarget: { keep: { tail1: 0.5 } } }
+```
+
+Each mapped bone turns by its joint's world-space turn from the clip's rest. A bone with a `child` (another mapped
+bone below it in the rig) is first turned so it points where the clip's joint points to the child's joint (as each
+humanoid limb is), so a creature built in its own rest pose plays the clip; without `child` it keeps its parent's
+aim. Unmapped bones follow their parent (a saddle on the body); unmapped clip joints are ignored (IK and pole
+bones). The map changes nothing else: parents, pivots and skin come from `rig` and `skin` as usual, so give the
+creature a hierarchy (`parent:`) and a skin (`rigid` or `soft`). `retarget: { keep, offset }` works per mapped bone
+(by id, or a base name for `_l`/`_r` pairs).
+
+`root_motion` names the clip joint whose movement moves the model: its movement, scaled by the moving bone's rest
+height over the joint's rest height (a joint at ground level: unscaled), moves the bone mapped to that joint, or,
+when it isn't mapped (`Torso` above), the bone mapped to its nearest mapped joint below it (`body`: `Torso2`). Without
+`root_motion` nothing moves: the clip plays in place, rotations only (the body's bob and travel are dropped).
+
+`skeleton: humanoid` uses the standard table and takes no map (`skeleton: { ... }` is for every other skeleton).
+Findings (E007): a map key that isn't a part id (or is `root`), a `child` that isn't a mapped bone below it; (E008)
+a mapped joint or `root_motion` the clip file doesn't have (with the nearest names). Check with `--pose <animation>`.
 
 ## Attachments for CC0 characters
 
@@ -366,6 +436,125 @@ starts again from that position and velocity, `[0, 0, 0]` = resting there withou
 `at + g/k*age + (velocity - g/k)*(1 - exp(-k*age))/k` with drag k > 0, `at + velocity*age + g*age^2/2` with k = 0.
 E011 when an emitted model doesn't exist.
 
+## Terrains
+
+A model with `terrain:` instead of `parts:` is a heightfield (one height per x, z) with up to four splat layers of
+palette colours: ground for a level. Only `name`, `description`, `tags`, `status`, `style_version`, `class` (default
+`terrain`), `style`, `palette` and `lint` go with it. The map is centred on the origin (x and z from -size/2 to
++size/2), heights in metres. Design point: 256 x 256 m at 0.5 m cells (builds in ~2 s, ~120 MB).
+
+```yaml
+name: valley
+terrain:
+  size: [256, 256]           # metres [x, z] (or one number); a whole number of cells and of chunks
+  cell: 0.5                  # grid spacing (m); up to 2048 x 2048 cells
+  chunk: 32                  # mesh tile size (m): a whole number of cell x 2^(number of LODs), at most 250 cells
+  lod: [64, 160]             # camera distances (m) where LOD 1, 2, ... take over (each halves the grid); [] = none
+  skirt: 1.5                 # optional: how far chunk edges hang down (default: from the LODs' height error)
+  collision: 1               # HeightMapShape3D sample every 1, 2, 4 or 8 cells; false = none
+  seed: 3                    # noise seed; base: 0 (the height everything starts from)
+  shapes:                    # applied in order to the running height H
+    - noise: { scale: 70, height: 3, octaves: 5 }     # roughness: 0.5, ridged: false, seed: 0 (added to the terrain's)
+    - hill: { at: [-70, -50], radius: 55, height: 22 }  # radius m or [x, z] (an oval), rotate: degrees
+    - ridge: { points: [[-128, 90], [0, 100], [128, 80]], width: 35, height: 20 }   # a smooth curve through the points
+    - plateau: { at: [70, -55], radius: 26, edge: 10, height: 14, blend: max, smooth: 3 }   # flat top, sloping rim
+    - hill: { at: [40, 35], radius: 28, height: 5, blend: subtract }  # a hollow
+    - path: { points: [[-128, 10], [0, 0], [128, 5]], width: 5, edge: 5, depth: 0.25 }  # smooth: 12 (m along it)
+  splat:                     # 1-4 layers; the first is everywhere, each later one painted over where its rules hold
+    - grass: { color: grass }
+    - dirt: { color: dirt, path: { within: 3.5, fade: 1.5 }, noise: { scale: 6, cover: 0.85 } }
+    - rock: { color: rock, slope: { above: 28, fade: 6 } }
+    - sand: { color: sand, height: { below: -1.5, fade: 1 } }
+```
+
+Each shape has a weight p (1 at its core, a smooth falloff to 0 at its edge: a hill's radius, a ridge's `width` from
+its line, a plateau's `edge` past its radius) and a `blend`: `add` (default; H += height x p), `subtract`, `max` /
+`min` (raise / lower towards the level `height`; `smooth`: m of crease rounding) or `set` (to the level). Noise only
+adds or subtracts (about +-height). A path flattens a band (`width`, banks `edge`) to the ground's own height smoothed
+along it (`smooth` m), sunk by `depth`: roads that cut through hills and bridge dips. Layer rules multiply:
+`slope: { above, below, fade }` degrees, `height: { above, below, fade }` metres, `path: { within, fade }` metres from a
+path's centre line, `noise: { scale, cover (0-1), fade, seed }` patches; `strength` (0-1) caps the layer.
+
+Output: `models/<name>.glb` (LOD 0) and `.lod<k>.glb`: a root node with `chunk_<ix>_<iz>` nodes at the chunks'
+centres, each a regular grid mesh (POSITION, NORMAL, COLOR_0 = the blended colours, TEXCOORD_0 = the splat map) with a
+skirt; `models/<name>.splat.png` (one pixel per grid point, top = -z; R, G, B = layers 2-4, layer 1 = the rest); with
+"godot", `models/<name>.tscn`: the LOD glbs (each chunk shown between its LOD's distances, 4 m overlap), a splat shader
+blending the palette colours (the style's toon bands if it has them) and a StaticBody3D with a HeightMapShape3D
+(inline, scaled by the sample spacing). Godot imports the chunk glbs without its own LODs. Manifest: the usual fields
+plus `terrain` (`size`, `cell`, `samples`, `chunk`, `chunks`, `lod_distances`, `skirt`, `height_range`, `splat`,
+`layers` with `channel`, `collision` (`samples`, `spacing`), `probes`: [x, z, height] points `--verify-godot` checks
+the collision at). `kiln preview <terrain>`: from above (splat colours, lit) and from four sides. Lint: W116 a layer
+covers < 0.5% of the map, W117 a shape is off the map.
+
+Tools (foliage scattering, props on the ground) read the heightfield in Python:
+`kiln.terrain.load(project, "valley")` -> `Heightfield` with `height(x, z)`, `normal(x, z)`, `slope(x, z)` (degrees),
+`splat(x, z)` (weights in `layer_names` order), `distance_to_path(x, z)`, `distance(points)` (y - height: the
+heightfield as a distance field) and `bounds()`; arrays in, arrays out, bilinear between grid points.
+
+## Scatters
+
+A model with `scatter:` instead of `parts:` places other models many times over a surface: grass, flowers, rocks and
+trees on a terrain, moss on a boulder, pebbles on a flat area. Only `name`, `description`, `tags`, `status`,
+`style_version`, `class` (default `scatter`), `style`, `palette` and `lint` go with it. KILN rolls every instance at
+build time (Python's `random.Random`, one stream per `place` entry: stable across machines, and editing one entry leaves
+the others where they were).
+
+```yaml
+name: meadow
+scatter:
+  onto: valley               # a terrain, another model (its top surface, seen from above) or flat (needs size)
+  size: [64, 64]             # optional: the area [x, z] in metres (or one number), centred on the origin;
+                             # default: the whole terrain / the model's footprint
+  seed: 7
+  chunk: 32                  # instances are grouped in cells this size (one MultiMesh each: culling, LODs)
+  place:                     # in order: later entries keep their distance from earlier ones (spacing)
+    - model: tree            # a model, name.variant, or a list picked evenly: [flower, flower.pink]
+      density: 0.003         # candidates per m^2 of area (seen from above), before rules and spacing
+      spacing: 9             # at least this far (m) from every instance placed before (the larger spacing of the two)
+      scale: [0.8, 1.3]      # a factor or [lo, hi]
+      rotate: 360            # yaw jitter in degrees (360 = any way round, the default; 0 = none; or [lo, hi])
+      tilt: 5                # a random lean up to this many degrees
+      align: 0               # 0 upright .. 1 up along the surface's normal
+      sink: 0.15             # metres into the surface (hides bases on slopes)
+      tint: { color: sand, amount: 0.4, shade: 0.15 }  # or a number: shade only
+      slope: { below: 22 }   # degrees, { above, below, fade } as terrain splats
+      height: { above: 0 }   # metres
+      noise: { scale: 20, cover: 0.6 }   # patches (clumps of flowers)
+      splat: grass           # a terrain's layer (or a list): kept as often as their summed weight there
+      path: { beyond: 6 }    # a terrain's paths: away from (beyond) or near (within) their centre lines, m
+      lod: [70]              # camera distances where the model's lod1, lod2, ... take over (needs its lod: budgets)
+      visible: 120           # hidden beyond this camera distance (m); 0 = always
+```
+
+How it places: `density` x the area candidates, uniform over the area; a candidate is dropped where there's no surface
+(off a model, or under an overhang), else kept with the probability its rules give (multiplied; each a smooth ramp
+over its `fade`), then dropped if it is closer than `spacing` to an instance placed before it (entries with spacing 0
+skip that check). An instance stands its model's origin (its feet) on the surface, `sink` lower; it leans `align` of
+the way to the surface's normal, then by a random `tilt`, turns by `rotate` about its up and is scaled. `tint` makes
+an instance colour (linear RGB) that multiplies the model's colours: white leaning towards `color` by up to `amount`,
+darkened by up to `shade`. Scatter models made of one mesh (no rig, no skin); keep their budgets small (grass ~100
+triangles, trees ~1500 with a `lod:`).
+
+The scatter's frame is the surface's: a terrain's map, a model's exported frame (its glb's: model space minus its
+`origin`), or a flat area centred on the origin at y = 0. Put the scatter scene under the terrain or model.
+
+Output: `models/<name>.scatter.json`: `format`, `seed`, `onto` (`kind`: flat, terrain or model; `model`), `area`
+(`min`, `max` x, z), `chunk` and `groups`, one per entry and model (`node`, `place`, `model`, `variant`, `glb`, `lods`,
+`godot_scene`, `count`, `lod_distances`, `visible`, `chunks` (`node`, `first`, `count`: ranges of `instances`),
+`instances` (each `[x, y, z, ax, ay, az, bx, by, bz, cx, cy, cz]`: the model's origin and its x, y, z axes, scale
+included) and, with a tint, `colors` (linear RGB per instance)). With "godot", `models/<name>.tscn`: a Node3D per group
+holding a `MultiMeshInstance3D` per chunk (transforms and colours inline); its inline script gives each MultiMesh the
+model's mesh with the materials the model's own scene sets up (the style's look; tinted groups let instance colours
+through: `vertex_color_use_as_albedo`, the toon shader's COLOR), adds `<chunk>_lod<k>` copies with the model's LOD glbs
+and sets the visibility ranges (2 m overlap). Manifest: `class`, `style`, `scatter` (the JSON), `onto`, `instances`
+(per group), `godot_scene`; no `glb`. `--verify-godot` checks every chunk and LOD against the JSON (instance counts,
+each transform times where the mesh sits in its model, colours, materials, distances). `kiln preview <scatter>`: from
+above, from two sides and close up where the most instances are (the whole-area views draw every n-th instance of the
+costliest groups beyond 200 000 triangles). Lint: E015 (an unknown or unsuitable model or variant, more `lod`
+distances than the model has LODs, `splat`/`path` without a terrain, an unknown layer, more than 1 000 000 candidates
+in an entry or 200 000 instances in a scatter), W118 an entry places more than 50 000 instances, W119 an entry places
+none.
+
 ## Animations
 
 Names are letters, digits, `_` or `-`, any case (imported clips can keep their library names: `Idle_A`); two names
@@ -421,6 +610,49 @@ Static meshes only. Colours snap to the palette (OKLab nearest), the style's mat
 stands on y = 0, and the build writes CREDITS.md. Files the model refers to (`Textures/colormap.png` in Kenney kits)
 are copied with it by `kiln import`, keeping their folders; a missing one is an error, not a white model.
 
+**.fbx, .blend, .obj** (optional, needs Blender 4.x: `blender` on PATH or `BLENDER=/path/to/blender`; `kiln doctor`
+shows which). Blender exports the file as a glb (+Y up, modifiers applied, skins, animations, the active vertex
+colours, textures as they come), which then imports like any glb. Two ways in:
+
+- `kiln import Knight.fbx --licence CC0-1.0 ...` converts once and writes `imports/Knight.glb` (the original isn't
+  copied); the model names the glb, so the project builds anywhere without Blender. Preferred.
+- `source.file`, an animation's `import:` and `fit_to.file` may name the .fbx/.blend/.obj directly: every load then
+  needs Blender, and the glb is cached in `.kiln-cache/blender/<key>/<name>.glb` (key: the file's sha256, an .obj's
+  .mtl and texture maps, the Blender version, the export script version), so only the first build runs it. Credits
+  name the original file.
+
+No Blender, or one older than 4: E010 (E008 for an animation `import:`) saying how to fix it; a failed conversion
+shows the end of Blender's output. FBX clip names carry Blender's armature prefixes (a `Wave` action came out as
+`Rig|Rig|Wave`); a wrong `clip:` lists the real names.
+
+### CC0 packs (`kiln pack`)
+
+KILN ships recipes for CC0 packs (`kiln pack list`): Kenney (`kenney-mini-dungeon`), KayKit (`kaykit-adventurers`,
+`kaykit-furniture-bits`, `kaykit-city-builder-bits`, `kaykit-dungeon-remastered`) and Quaternius
+(`quaternius-modular-scifi-megakit`). A recipe pins the archive's URL and sha256; mirroring checks both and that the
+pack's licence file says CC0.
+
+```sh
+kiln pack add kaykit-adventurers          # the only command that downloads: into ~/.cache/kiln/packs/<pack>@<version>/
+kiln pack search knight --json            # file name and tags (the pack's own + its folders); triangles, size, bytes
+kiln pack search chair --pack kaykit-furniture-bits --lineup   # + previews/pack-search.png: the hits at one scale
+kiln pack import kaykit-adventurers knight --height 1.8 --class character
+```
+
+Mirrors are per user, shared between games (`$XDG_CACHE_HOME/kiln/packs`; `KILN_PACK_CACHE` overrides). Search terms
+must all match, ranked whole name > a word of the name > part of it > a tag. `kiln pack import <pack>[@version]
+<path|name>` copies the model and the files it refers to into `imports/<pack>/`, writes the model (as `kiln import`:
+`source:` with CC0-1.0, the pack's author and page) and records every copied file in `kiln.lock` (JSON: path ->
+pack, version, url, sha256, licence, file in the pack). Commit `kiln.lock` and `imports/`; the cache stays out of the
+repo. A recipe file works too: `kiln pack add my-pack.toml` (fields `name`, `version`, `url`, `sha256`, `licence` =
+CC0-1.0 only, `author`, `homepage`, `strip` leading folders, `models` folder, `licence_file`, `textures` shared folder,
+`tags`).
+
+With a `kiln.lock`, lint and build check it (E014 errors fail the build): a listed file whose sha256 changed, an
+entry whose licence isn't CC0-1.0, a model whose `source.licence` differs from its file's entry; a listed file that's
+gone is W115. Files without an entry (local `kiln import`) aren't checked; no `kiln.lock`, no checks. CREDITS.md and
+the manifest's `source` name the pack (`pack: kaykit-adventurers@1.0`) for locked files.
+
 ## Styles
 
 ```toml
@@ -444,8 +676,14 @@ plastic = { roughness = 0.42 }
 [look]                         # the Godot look kit and preview lighting
 shader = "standard"            # standard | toon
 toon_bands = 3
-outline = 0.0                  # metres (toon outlines), 0 = none
-outline_color = "#1a1420"
+toon_softness = 0.0            # toon: 0 = hard band steps; up to 1 = each edge blends over a whole band (0.2-0.4: soft cel)
+toon_shadow_color = ""         # toon: "" = shadows only darken; "#rrggbb" or a palette colour = the sun's missing light in
+                               # that colour (warm/cool shading; a light colour tints more; per model with its palette)
+toon_specular = 0.0            # toon: one hard highlight blob, strength 0..1 (size grows and strength fades with roughness)
+toon_shadows = "soft"          # toon: soft = Godot's received shadows; band = they drop into the darkest band (Godot only)
+outline = 0.0                  # metres (toon outlines), 0 = none; pixels with outline_space = "pixels" (e.g. 2)
+outline_color = "#1a1420"      # or "darken": each part's own colour, darkened
+outline_space = "metres"       # metres: a shell that thins with distance; pixels: constant thickness on screen
 tonemapper = "filmic"          # linear | filmic | aces | agx
 exposure = 1.0
 saturation = 1.15
@@ -468,13 +706,19 @@ rim_light_color = "#ffffff"
 rim_light_power = 3.0          # higher: thinner rim
 ```
 
+Every toon key is off by default (today's plain cel look). Wind Waker / Sable-style: `toon_softness = 0.2`,
+`toon_shadow_color` a cool mid tone, `toon_specular = 0.6` on glossy materials, `toon_shadows = "band"`,
+`outline_space = "pixels"` with `outline = 2` and `outline_color = "darken"`. Previews follow every key except
+`toon_shadows` (the software renderer has no cast shadows; `kiln preview --engine` shows them).
+
 ## Lint
 
 Errors: E000 usage/config, E001 file/YAML, E002 unknown field, E003 bad value, E004 unknown colour, E005 unknown
 material, E006 style problem, E007 rig problem, E008 animation problem, E009 nothing to mesh, E010 import file
 problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id),
 E013 the built mesh has open edges (cracks), edges with more than two faces or sheets touching at a vertex (a KILN
-bug; report it).
+bug; report it), E014 `kiln.lock` problem (a pack-imported file changed, a licence that isn't CC0-1.0), E015 scatter problem
+(an unknown or unsuitable model to place or stand on, too many instances).
 
 Warnings: W101 part has no visible surface, W102 part thinner than the mesh resolution, W103 separate pieces,
 W104 colour not in the palette, W106 not standing on y = 0, W107 made under an older style_version, W108 size
@@ -482,7 +726,9 @@ unusual for the class, W109 animated part without a pivot, W110 well over the tr
 triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
 part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
 W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
-W114 (from `kiln build`) joints sit elsewhere than in the model's `animation_library`.
+W114 (from `kiln build`) joints sit elsewhere than in the model's `animation_library`. W115 `kiln.lock` lists a file
+that isn't in the project. W116 a terrain's splat layer covers < 0.5% of the map, W117 a
+terrain's height shape is off the map. W118 a scatter entry places more than 50 000 instances, W119 one places none.
 Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`. Lint meshes models in parallel
 (`KILN_JOBS` processes, default: every core) and caches them for build and previews.
 
@@ -492,7 +738,7 @@ Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`.
 `kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--effect [--at T,T,...]] [--engine] [--variant V]` ·
 `kiln lineup [models]` · `kiln gallery` · `kiln build [models] [--verify-godot]` (named models only: the others keep their last output) · `kiln status` ·
 `kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
-`kiln config show|get|set` · `kiln import <file> --licence L` · `kiln credits` · `kiln doctor` ·
+`kiln config show|get|set` · `kiln import <file> --licence L` (.glb/.gltf; .fbx/.blend/.obj with Blender 4.x) · `kiln pack list|add|search|import` · `kiln credits` · `kiln doctor` ·
 `kiln skill install` · `kiln mcp`. Every command takes `--json` (before or after the command). `--closeup` takes a part
 id (`root` = parts without one) or a part's number in the file (`--closeup 3`).
 `kiln preview <model> --vs <ref.glb|ref.gltf> [--ref-height METRES]`: the model against a reference mesh (a CC0
@@ -522,7 +768,8 @@ style materials) and `looks/<style>.tscn` (WorldEnvironment + Sun), `manifest.js
 Manifest per model: `glb`, `godot_scene`, `class`, `style`, `status`, `triangles`, `bounds` and `size` (metres),
 `skin`, `parts` (parent, pivot, meta, separate, `node_path`: glTF node names from the root, `aabb`: the part's box
 in model space, rest pose, for hit zones), `animations` (gltf_name, fps, frames, loop, interpolation, duration),
-`variants` (`swap`, `glb` unless variant_glbs = false, `godot_scene`), `lods`, `colors`, `source` (imports), `effect`;
+`variants` (`swap`, `glb` unless variant_glbs = false, `godot_scene`), `lods`, `colors`, `source` (imports), `effect`,
+`humanoid` (each joint's KayKit, Mixamo, Godot name), `godot_bonemap` (with godot_bonemap = true: the BoneMap file);
 parts also have `sockets`, animations a `start` (the parts their first frame moves, e.g. an arm built level but
 cocked when the animation starts). With `vertex_colors = true`, a game loading the .glb itself must set
 `vertex_color_use_as_albedo = true` on the imported materials (KILN's .tscn scenes do it); variants are then swap
@@ -555,6 +802,10 @@ AnimationLibrary (no `.tscn`); add it to each model's AnimationPlayer.
 `kiln build --verify-godot` checks everything in a throwaway copy of the output (nothing else in the game's project is
 imported or touched). Attachments (`fit_to`) are hung on their bone of a copy of the character through a
 BoneAttachment3D and must land where they were made.
+
+Other engines: everything but the `.tscn` files, `.import` sidecars and `<name>.rim.png` is plain glTF + JSON. Notes per
+engine (axes, scale, vertex colours, palette texture filtering, skins, clips, LODs, approximating the look):
+https://github.com/lukasgolino/KILN/blob/main/docs/engines.md
 
 In Godot:
 
