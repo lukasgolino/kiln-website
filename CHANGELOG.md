@@ -5,6 +5,17 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-06
+
+### Added
+
+- A standard icon set: `favicon.ico` (16/32/48 px), a 96 px icon, a 180 px apple-touch icon and `site.webmanifest`
+  with 192/512 px and maskable icons, so search results, tabs, bookmarks and home-screen shortcuts all show the
+  icon ([#7](https://github.com/lukasgolino/kiln-website/issues/7)).
+- schema.org structured data (JSON-LD) on the home page, an `llms.txt` summary for AI assistants, and robots.txt
+  content signals allowing search and AI use; the home page title names what the site is for
+  ([#8](https://github.com/lukasgolino/kiln-website/issues/8)).
+
 ## [0.1.0] - 2026-11-06
 
 ### Added
@@ -25,5 +36,6 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lukasgolino/kiln-website/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lukasgolino/kiln-website/releases/tag/v0.1.0
