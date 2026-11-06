@@ -2,7 +2,7 @@
 
 The website for [KILN](https://github.com/lukasgolino/KILN) (Keyed Implicit Language & Notation): one long page
 (hero, styles, features, comparison, gallery, install, FAQ) and docs generated from KILN's own files. Static Astro
-site, no backend, deployed to GitHub Pages.
+site, no backend, deployed to GitHub Pages at https://kiln3d.dev/.
 
 **Every model and image on the site is real KILN output**, built from the KILN projects in `art/`. The 3D viewer
 (`src/scripts/viewer.ts`, three.js) loads the same `.glb` files a game would and lights them with each style's look.
