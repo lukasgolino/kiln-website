@@ -80,6 +80,9 @@ const home = Astro.url.pathname.replace(/\/?$/, "/") === base;
         </nav>
       </div>
     </footer>
+    {import.meta.env.PROD && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "fb87571fa73543c78820b52956ead79f"}'></script>
+    )}
   </body>
 </html>
 

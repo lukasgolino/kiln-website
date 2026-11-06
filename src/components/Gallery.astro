@@ -21,7 +21,7 @@ const sources = Object.fromEntries(order.map((n) => [n, highlightSource(source(n
         {
           models.map((m, i) => (
             <li>
-              <button type="button" data-value={m.name} aria-pressed={String(i === 0)}>
+              <button type="button" data-value={m.name} aria-pressed={i === 0}>
                 <img src={asset(`img/thumbs/${m.name}.png`)} width="120" height="120" alt="" loading="lazy" />
                 <span>{m.name}</span>
               </button>

@@ -4,6 +4,7 @@ name: deploy
 on:
   push:
     branches: [main]
+    paths-ignore: [CHANGELOG.md, README.md, ".github/workflows/check.yml", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,10 @@ jobs:
         uses: actions/configure-pages@v5
       - run: npm ci
       - run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          SITE_BASE: ${{ steps.pages.outputs.base_path }}/
+      - run: node tools/check-dist.mjs
         env:
           SITE_URL: ${{ steps.pages.outputs.origin }}
           SITE_BASE: ${{ steps.pages.outputs.base_path }}/

@@ -38,14 +38,14 @@ const descriptions = Object.fromEntries(styles.map(([k]) => [k, data.styles[k].d
     </div>
     <figure class="panel show">
       <div class="chips" id="style-pick" aria-label="Style">
-        {styles.map(([k, label], i) => <button type="button" data-value={k} aria-pressed={String(i === 0)}>{label}</button>)}
+        {styles.map(([k, label], i) => <button type="button" data-value={k} aria-pressed={i === 0}>{label}</button>)}
       </div>
       <div class="stage" id="style-stage" data-looks={JSON.stringify(looks())} data-info={JSON.stringify(info)} data-descriptions={JSON.stringify(descriptions)} role="img" aria-label="The selected demo model in the selected style. Drag to turn it.">
         <span class="hint">drag to turn</span>
         <button class="play" type="button" aria-label="Pause">❚❚</button>
       </div>
       <div class="chips" id="style-model" aria-label="Model">
-        {picks.map((m, i) => <button type="button" data-value={m} aria-pressed={String(i === 0)}>{m}</button>)}
+        {picks.map((m, i) => <button type="button" data-value={m} aria-pressed={i === 0}>{m}</button>)}
       </div>
       <figcaption id="style-caption"></figcaption>
     </figure>
