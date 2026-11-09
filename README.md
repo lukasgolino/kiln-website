@@ -1,6 +1,6 @@
 # KILN website
 
-The website for [KILN](https://github.com/lukasgolino/KILN) (Keyed Implicit Language & Notation): one long page
+The website for [KILN](https://github.com/lukasgolino/kiln) (Keyed Implicit Language & Notation): one long page
 (hero, styles, features, comparison, gallery, install, FAQ) and docs generated from KILN's own files. Static Astro
 site, no backend, deployed to GitHub Pages at https://kiln3d.dev/.
 

@@ -5,6 +5,16 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-09
+
+### Changed
+
+- Install from PyPI: `pip install kiln-gen==0.19.0`, and the MCP server through `uvx kiln-gen@0.19.0 mcp` (listed in the
+  MCP Registry as `io.github.lukasgolino/kiln`). The old `kiln @ git+...` lines stop working from KILN 0.19.0, which is
+  published as `kiln-gen`. Links follow the repository's rename to `lukasgolino/kiln`.
+- The site is built with KILN 0.19.0 (was 0.13.0): the demo models, previews and social card are rebuilt, and the docs
+  reference page is assembled from the skill's topics, which replaced `reference.md`. The workflow page links to it.
+
 ## [0.3.1] - 2026-11-09
 
 ### Added
@@ -51,7 +61,8 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/lukasgolino/kiln-website/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/lukasgolino/kiln-website/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/lukasgolino/kiln-website/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/lukasgolino/kiln-website/compare/v0.1.0...v0.2.0

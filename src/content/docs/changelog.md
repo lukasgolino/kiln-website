@@ -6,6 +6,194 @@ before 1.0).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-09
+
+KILN is on PyPI as `kiln-gen` and in the MCP Registry as `io.github.lukasgolino/kiln` (#155). Output is
+byte-identical apart from the generator string.
+
+### Changed
+
+- The distribution is `kiln-gen` (`kiln` on PyPI is another project): `pip install kiln-gen`; the command and the
+  import stay `kiln`. Git pins must use the new name from this version on (`kiln-gen @ git+...@v0.19.0`).
+- The MCP server is always installed (`mcp` is a dependency; the `mcp` extra is kept, empty), so
+  `uvx kiln-gen mcp` runs it without an install.
+- **Upgrading from a git-pinned `kiln`:** `pip uninstall kiln` first, then install `kiln-gen`. Both own the same
+  `kiln/` files, so uninstalling `kiln` after installing `kiln-gen` deletes them.
+
+### Added
+
+- Tags publish to PyPI (Trusted Publishing) and `server.json` to the MCP Registry.
+
+## [0.18.0] - 2026-11-08
+
+Meshes change for models whose parts share pattern colours (several parts with the same `gradient`); everything
+else, the demo included, is byte-identical apart from the generator string.
+
+### Fixed
+
+- Parts with the same `gradient` (or patterns of the same colours) paint only their own faces (#131): the bands'
+  colour groups are shared between them, and a later part's bands cut and repainted the earlier parts' band faces
+  by its own coordinate (wrong colours, stray cuts, cracks). Meshes of such models change.
+- Decimation no longer leaves zero-volume pockets at thin parts' pointed tips (#131): two copies of a colour-border
+  vertex at one place, each capping the same ring, read as non-manifold edges (E013). They are joined and the twin
+  faces dropped.
+
+## [0.17.0] - 2026-11-06
+
+Fixes the open issues from game use: faster painting, Godot Compatibility colours, filtered normal maps, clean
+colour edges on noisy parts, new lint warnings (W123, W124), preview views and sizes, a smaller MCP tool list.
+Meshes change for models with `noise` next to another colour and for every baked normal map; Godot scenes of
+models with vertex colours (or `atlas_ao`) gain the Compatibility re-encode; the demo's knight and wall use
+`origin: ground`. Everything else is byte-identical apart from the generator string.
+
+### Added
+
+- `origin: ground` (#101): the exported mesh lifted (or lowered) onto y = 0 by its built lowest point, x and z as
+  written; the manifest records the origin as for the other values.
+- W123 (#101): the built mesh of a model standing on y = 0 dips under it by 2 mm (or a tenth of a cell) or more:
+  blends and meshing push feet under the shapes' bottom, and W106 only fires past 1 cm. It points at
+  `origin: ground`, which the demo's knight and wall now use (they dipped 4.5 and 7.1 mm).
+- W124 (#98): a part shows only a sliver (97% or more of its own surface deeper inside other parts than their blend:
+  clipped flat or nearly gone), naming the covering parts. W101 also names the parts that cover a hidden one. Hard,
+  shell, separate and revealed parts are left out (hard parts are meshed as their tessellation, not their field).
+- Long builds and lints are never silent for more than 10 s (#99): the current phase repeats itself every 10 s
+  (`kiln: bigfoot: reducing to 15000 triangles (10 s)`), not only when the next one starts. Runs over 20 s without
+  `kiln[fast]` installed point at it (a 50-part character: 20 s -> 9 s; cached: 1 s, shared with previews).
+- `normal_strength` (#125): scales a baked normal map's tilt (0.5 softer, 0 flat, up to 4).
+- `kiln preview --views front,34,side,back --pitch 5,30 --size 500` (#96): one sheet of the views asked for (names
+  or degrees, a row per pitch) as `views.png`; `--size` sets the tile size of the turntable, closeups and views, and
+  `preview_size` in kiln.toml its default. `--turntable` has a help line.
+
+### Fixed
+
+- Docs (#102): where a ring `array`'s arc starts and which way it runs, that copies turn with the ring, and that a
+  `cone`'s (and `cylinder`'s) `at` is its middle, with `aim` to place it by its ends.
+- Baked normal maps are filtered per texel (#125): four samples a quarter texel around its centre, each with a
+  gradient step of half a texel, so detail finer than a texel blurs out instead of aliasing into streaks and speckle
+  (sub-texel noise: tilt std 0.10 -> 0.04). Bakes take about 1.5x as long; every baked map changes. parts.md says
+  which groove sizes read at which map size.
+- Colour borders between a noisy part and its neighbours follow the parts' smooth shapes (#100): noise roughens the
+  surface, not the edge of a blended patch on it (it came out saw-toothed). Meshes of models with `noise` next to
+  another colour change.
+- `kiln init` inside a Godot project names the `.gdignore` it wrote (in the KILN folder, not the Godot project's) and
+  says the default `output_dir` is under it, with a path Godot sees (#97). `kiln build` with Godot export stops with
+  E000 when `output_dir` is under a `.gdignore` in the Godot project (the scenes would never import).
+- A palette with errors (e.g. a key of two characters, #126) reports only its own errors, naming the file and key;
+  models using it are not parsed, instead of failing with one "unknown colour ... (none)" per part.
+- Vertex colours (`vertex_colors = true`, and `atlas_ao`'s baked occlusion) render as in the previews in Godot's
+  Compatibility renderer (#124): it decodes the colour attribute from sRGB once more, so they came out darker and
+  more saturated. The generated scenes of models with COLOR_0 (and scatter scenes, for their LOD glbs) re-encode each
+  mesh's colours once at load, only on Compatibility and not headless; the mesh carries the mark, so scenes sharing a
+  glb don't encode it twice. Forward+ and Mobile, and scenes of models without vertex colours, are unchanged. An offscreen render
+  test (`KILN_ENGINE_RENDER=1`, `tools/godot_window.sh`: Xvfb with Mesa's CPU drivers) compares vertex and material
+  colours in both renderers.
+- Painting no longer grows with the square of the paint groups (#123): each group's border takes one suffix minimum
+  instead of a minimum over all later groups, and patterns and gradient bands evaluate and refine only their own
+  part's faces, not the whole mesh. Output is byte-identical. A 120-tuft gradient test model paints in 30 s instead
+  of 75 s; long paints print their progress (parts, colour groups) at most every 10 s.
+
+### Changed
+
+- The MCP tool list is a third smaller (#94): 15.1k -> 9.6k characters (~2.7k tokens) for 24 tools. No `title` on
+  every schema, no generic output schemas, only annotation hints that differ from the spec's defaults, and one-line
+  descriptions for the long ones (`docs` holds the detail). A test keeps it under 10.5k.
+- README links the website at its own domain, https://kiln3d.dev/ (#128).
+- CI: lint, types and tests on one Python run on every push. The full Python matrix and the Godot checks run on the
+  PR once it leaves draft, and again only if a commit lands after that, as the last gate before merge.
+
+## [0.16.1] - 2026-11-05
+
+The 0.16.0 release as it was meant to be: the `v0.16.0` tag was pushed before #120 merged and sits on the commit
+before it (0.15.0 code), so it doesn't hold what the 0.16.0 section below lists. Pin `v0.16.1`, not `v0.16.0`.
+
+### Fixed
+
+- Tags publish a GitHub release, with their CHANGELOG section as the notes (#121).
+
+## [0.16.0] - 2026-11-05
+
+### Added
+
+- **Normal maps baked from the distance field** (#111, `kiln[bake]`: xatlas). A model with `normal_map: 1024` gets
+  unique UVs (TEXCOORD_0; projected UVs move to TEXCOORD_1), tangents (TANGENT, so engines decode the map with the
+  basis it was baked in) and a tangent-space normal map: each texel's normal is the field's gradient at the surface
+  point under it. Fine shape detail then shows on a coarse, light mesh. Godot scenes read it (standard and toon looks),
+  and `kiln preview` shades with it. Not with `atlas = true` yet (both need the first UV set).
+- **`detail: true` parts**: only in the baked normal map, never in the mesh (fur strand grooves, wrinkles, creases).
+  Lint W121: a detail part with no map, or thinner than two texels.
+
+- **`gradient: { to: fur_light, steps: 3 }`** (#106): a part's colour (or `from`) going to `to` in `steps` bands mixed
+  in OKLab, along the path of a tube, capsule or lock (root to tip), or `along: x|y|z` of other shapes. Patterns paint
+  over it. Per-part random tones read as camouflage; a root-to-tip change reads as fur.
+- **`blend_to: <id>`** (or a list of ids) (#107): with `blend`, a part melts only into the earlier parts with those ids
+  and meets every other part crisply. Fur locks melt into the body and keep a groove between each other (one blend
+  radius either melted neighbours into lumps or left each lock looking stuck on). Compiled kernel too.
+- **`lock` shape** (#105): a flat blade along a path with an elliptical section, `width` x `thickness` tapering to
+  `width_to` / `thickness_to` (`width_to: 0`: a pointed V tip), its flat sides looking along `facing`. For carved fur
+  and hair locks, feathers, leaves and petals, which round tubes made look like candle drips.
+- **`scale: [x, y, z]`** (or one number) on any soft part: a stretch in the part's own frame (the distance is a bound,
+  as usual for stretched fields). Hard parts can't scale (an error, like twist and noise).
+- **`kiln[fast]`: compiled distance evaluation** (#112, numba, optional). The whole field is evaluated in one compiled,
+  multi-threaded pass per point (every shape but extrudes; mirror, copies, rotation, twist, shells, open sides, noise),
+  with each part skipped per point where its box shows it can't change the result. A 422-part 2.4 m character, lint at
+  12 mm: 154 s -> 67 s; a 48-part one at 4 mm: 114 s -> 72 s. Output agrees with the plain install to ~1e-15 m, not bit
+  for bit: pin one or the other in a game. `KILN_JIT=0` turns it off. Lint's worker processes share the cores.
+
+### Changed
+
+- Previews (`kiln preview`, its sheets, `kiln gallery`, scatters) show the occlusion `atlas_ao` bakes in (#109), as
+  Godot does; before, they under-represented the built look.
+- Pattern refinement looks split edges up with sorted integer keys instead of a Python dict over every edge: patterned
+  and gradient parts build several times faster (a 70-lock model: 46 s -> 30 s). Output is unchanged.
+- **Many-part models need far less memory** (#110). Painting, part areas, nearest-part lookups and lint's shell check
+  kept every part's distance over every vertex (parts x vertices: ~3.4 GB for 422 parts on a 1M-vertex mesh). They now
+  keep a running minimum per paint group or point. Output is unchanged.
+
+### Added
+
+- `kiln build` and `kiln lint` end with the run's time and peak memory (`--json`: `seconds`, `peak_memory_gb`), and a
+  model build that has run over 10 s says what it is doing on stderr (meshing, painting, reducing, skinning) (#108).
+
+## [0.15.0] - 2026-11-05
+
+### Added
+
+- **Mesh detail is a setting** (#103). The grid was capped at 256 cells across a model, so a 2.4 m hero could not be
+  meshed finer than ~10 mm whatever the style asked for. Now:
+  - style `[shape] max_cells` (64-1024, default 256) and `scale_with_size` (default true: models over 1 m get
+    resolution x sqrt(size); false: the resolution as is);
+  - model `resolution:` (metres per cell for that model, used as is) and `max_cells:`, overriding the style;
+  - lint **W120**: the cap, not the resolution asked for, set the cell size; it names the `max_cells` needed;
+  - `kiln build` prints each model's triangles and mesh cell size, and the manifest has `step` per model.
+  Defaults are unchanged: existing models build byte-identically.
+
+### Changed
+
+- Faster, leaner meshing at fine resolutions: field evaluations go in small spatially tight batches (most parts are
+  skipped per batch), fine samples and normals are computed in chunks, and the fold repair after dual contouring only
+  rechecks faces it moved. A 2.4 m, 48-part character: 33 s -> 28 s at the default 12.6 mm, 196 s -> 114 s at 4 mm
+  (peak memory ~2.8 GB there, ~0.3 GB at the default). Output is unchanged.
+- Lint and build size their worker pool for the biggest model's mesh grid (~36 bytes per cell), not a fixed 0.7 GB,
+  so several fine-resolution models no longer run the machine out of memory.
+
+## [0.14.0] - 2026-11-04
+
+### Changed
+
+- **The skill is split for agents that pay per token** (#85). `SKILL.md` is a 6 KB core (was 17 KB) that is loaded
+  whenever the skill triggers; the rest of the old SKILL.md and all of `reference.md` (60 KB) moved, unchanged, into
+  17 topic files (`skill/topics/*.md`). `kiln skill install` writes them and removes an installed `reference.md`.
+  The MCP resource `kiln://reference` became `kiln://docs/{topic}`.
+- **`--json` prints compact JSON** (one line, no indentation). Pipe through `python -m json.tool` to read it by eye.
+- `kiln status` lists models grouped by state (one line per group); `-v` / `--verbose` (MCP: `verbose`) gives the
+  old per-model listing with descriptions. `--json` leaves out descriptions unless `--verbose`.
+
+### Added
+
+- `kiln docs [topic...] [--search words]` (MCP tool `docs`): lists the topics with their size, prints one, or
+  prints the few paragraphs that match. Budget tests keep `SKILL.md`, its description and each topic under a size.
+- `ruff check` in CI (#91).
+
 ## [0.13.0] - 2026-10-29
 
 Issues #15, #16, #18, #19, #20, #21, #23, #26, #27 and #64: terrains, foliage scattering, CC0 pack mirroring,
@@ -222,7 +410,7 @@ settings, partial builds, and E013 crack fixes. Hard-surface and humanoid output
 ### Added
 
 - The skill asks agents to report what got in their way (crashes, misleading messages, workarounds, missing
-  features) as GitHub issues at https://github.com/lukasgolino/KILN/issues: a minimal-repro draft, a duplicate
+  features) as GitHub issues at https://github.com/lukasgolino/kiln/issues: a minimal-repro draft, a duplicate
   check, and filing only once approved. `.github/ISSUE_TEMPLATE/agent-report.md` and the `agent-report` label.
   Run `kiln skill install` to update a project's copy of the skill.
 
@@ -456,18 +644,26 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/KILN/compare/v0.12.0...HEAD
-[0.12.0]: https://github.com/lukasgolino/KILN/compare/v0.11.0...v0.12.0
-[0.11.0]: https://github.com/lukasgolino/KILN/compare/v0.10.1...v0.11.0
-[0.10.1]: https://github.com/lukasgolino/KILN/compare/v0.10.0...v0.10.1
-[0.10.0]: https://github.com/lukasgolino/KILN/compare/v0.9.0...v0.10.0
-[0.9.0]: https://github.com/lukasgolino/KILN/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/lukasgolino/KILN/compare/v0.7.1...v0.8.0
-[0.7.1]: https://github.com/lukasgolino/KILN/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/lukasgolino/KILN/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/lukasgolino/KILN/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/lukasgolino/KILN/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/lukasgolino/KILN/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/lukasgolino/KILN/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/lukasgolino/KILN/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/lukasgolino/KILN/releases/tag/v0.1.0
+[Unreleased]: https://github.com/lukasgolino/kiln/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/lukasgolino/kiln/compare/v0.18.0...v0.19.0
+[0.18.0]: https://github.com/lukasgolino/kiln/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/lukasgolino/kiln/compare/v0.16.1...v0.17.0
+[0.16.1]: https://github.com/lukasgolino/kiln/compare/v0.16.0...v0.16.1
+[0.16.0]: https://github.com/lukasgolino/kiln/compare/v0.15.0...v0.16.0
+[0.15.0]: https://github.com/lukasgolino/kiln/compare/v0.14.0...v0.15.0
+[0.14.0]: https://github.com/lukasgolino/kiln/compare/v0.13.0...v0.14.0
+[0.13.0]: https://github.com/lukasgolino/kiln/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/lukasgolino/kiln/compare/v0.11.0...v0.12.0
+[0.11.0]: https://github.com/lukasgolino/kiln/compare/v0.10.1...v0.11.0
+[0.10.1]: https://github.com/lukasgolino/kiln/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/lukasgolino/kiln/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/lukasgolino/kiln/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/lukasgolino/kiln/compare/v0.7.1...v0.8.0
+[0.7.1]: https://github.com/lukasgolino/kiln/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/lukasgolino/kiln/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/lukasgolino/kiln/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/lukasgolino/kiln/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/lukasgolino/kiln/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/lukasgolino/kiln/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/lukasgolino/kiln/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/lukasgolino/kiln/releases/tag/v0.1.0

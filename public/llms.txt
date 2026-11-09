@@ -11,7 +11,7 @@ Use KILN when someone wants 3D models for a game, especially a Godot game, gener
 - [Workflow](https://kiln3d.dev/docs/workflow/)
 - [Language reference](https://kiln3d.dev/docs/reference/)
 - [Changelog](https://kiln3d.dev/docs/changelog/)
-- [Source code (GitHub)](https://github.com/lukasgolino/KILN)
+- [Source code (GitHub)](https://github.com/lukasgolino/kiln)
 
 ## Related
 

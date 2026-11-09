@@ -8,7 +8,7 @@ Writes:
   public/img/                         KILN's own previews: line-up, turntable, filmstrip, the lint story, Godot screenshot
   public/brand/                       the icon (art/brand/models/pot.kiln.yaml) rendered by KILN
   public/og/                          the social card
-  src/content/docs/                   reference.md, SKILL.md (workflow) and CHANGELOG.md, plus meta.json
+  src/content/docs/                   reference.md (the skill's topics), SKILL.md (workflow) and CHANGELOG.md, plus meta.json
 """
 
 from __future__ import annotations
@@ -167,18 +167,43 @@ def og(public: Path, pot: Image.Image) -> None:
     save(card.convert("RGB"), public / "og" / "kiln.png")
 
 
+# Reading order for the reference page; topics not listed follow alphabetically.
+TOPIC_ORDER = ["setup", "making", "parts", "templates", "styles", "rigs", "animations", "humanoids", "effects", "terrains",
+               "scatters", "imported", "build", "commands", "lint", "api", "report"]
+
+
+def reference(topics: Path) -> str:
+    """The skill's topics (KILN ships them instead of one reference.md) as one page: each topic's headings one level
+    down under the page title, code blocks untouched."""
+    names = sorted(p.stem for p in topics.glob("*.md"))
+    parts = ["# KILN reference\n\nEverything an agent needs to write KILN models, one section per `kiln docs` topic.\n"]
+    for name in [n for n in TOPIC_ORDER if n in names] + [n for n in names if n not in TOPIC_ORDER]:
+        lines, fenced = [], False
+        for line in (topics / f"{name}.md").read_text(encoding="utf-8").splitlines():
+            if line.startswith("```"):
+                fenced = not fenced
+            lines.append("#" + line if not fenced and line.startswith("#") else line)
+        parts.append("\n".join(lines).strip() + "\n")
+    return "\n".join(parts)
+
+
 def docs(content: Path, kiln_repo: Path) -> None:
     """One source of truth: the reference and workflow ship inside the kiln package; the changelog comes from
     a KILN checkout."""
     out = content / "docs"
     out.mkdir(parents=True)
     skill = Path(kiln.__file__).parent / "skill"
-    shutil.copyfile(skill / "reference.md", out / "reference.md")
+    (out / "reference.md").write_text(reference(skill / "topics"), encoding="utf-8")
     workflow = (skill / "SKILL.md").read_text(encoding="utf-8")
     workflow = workflow.split("---\n", 2)[2].lstrip() if workflow.startswith("---\n") else workflow
-    (out / "workflow.md").write_text(workflow.replace("](reference.md)", "](../reference/)"), encoding="utf-8")
+    # on the site every `kiln docs` topic is a section of the reference page: say so under the first heading
+    head, sep, rest = ("\n" + workflow).partition("\n# ")
+    title, _, body = rest.partition("\n")
+    note = "> Every topic named here (`kiln docs <topic>`) is a section of the [reference](../reference/).\n"
+    workflow = f"{head.lstrip(chr(10))}{sep.lstrip(chr(10))}{title}\n\n{note}{body}" if sep else workflow
+    (out / "workflow.md").write_text(workflow, encoding="utf-8")
     shutil.copyfile(kiln_repo / "CHANGELOG.md", out / "changelog.md")
-    write_json(out / "meta.json", {"kiln": metadata.version("kiln")})
+    write_json(out / "meta.json", {"kiln": metadata.version("kiln-gen")})
 
 
 def write_json(path: Path, data: Any) -> None:
@@ -201,7 +226,7 @@ def main() -> None:
         work = Path(tmp)
         data = models(public, work)
         data["lint"] = images(public, work, kiln_repo)
-        data["kiln"] = metadata.version("kiln")
+        data["kiln"] = metadata.version("kiln-gen")
         write_json(public / "data" / "site.json", data)
         og(public, brand(public, work))
         docs(content, kiln_repo)
