@@ -5,6 +5,13 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-09
+
+### Changed
+
+- Licensed under the Apache License 2.0 instead of MIT (#13). Releases up to 0.4.0 stay
+  available under MIT.
+
 ## [0.4.0] - 2026-11-09
 
 ### Changed
@@ -61,7 +68,8 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/lukasgolino/kiln-website/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/lukasgolino/kiln-website/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/lukasgolino/kiln-website/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/lukasgolino/kiln-website/compare/v0.2.0...v0.3.0

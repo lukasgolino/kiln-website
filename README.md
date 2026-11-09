@@ -46,4 +46,4 @@ Actions). The base path comes from the Pages settings, so it works as a project 
 
 ## License
 
-MIT, like KILN: see [LICENSE](LICENSE).
+Apache 2.0, like KILN: see [LICENSE](LICENSE).
