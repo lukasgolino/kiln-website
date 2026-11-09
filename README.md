@@ -31,7 +31,7 @@ python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
 python tools/build_site_assets.py --kiln-repo ../KILN   # a KILN checkout, for CHANGELOG.md and the Godot screenshot
 ```
 
-Commit `public/` and `src/content/docs` with the art. Upgrading KILN: bump the tag in `requirements.txt`, rebuild,
+Commit `public/` and `src/content/docs` with the art. Upgrading KILN: bump the `kiln-gen` version in `requirements.txt`, rebuild,
 look at the result.
 
 There is no CI check that the committed assets match a fresh build (as the PAGAN site has): KILN's `.glb` output is
