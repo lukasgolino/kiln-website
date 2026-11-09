@@ -4,13 +4,13 @@ import { escapeHtml } from "../scripts/highlight";
 
 const { kiln } = readJson("src/content/docs/meta.json");
 const tag = `v${kiln}`;
-const pkg = `git+https://github.com/lukasgolino/KILN@${tag}`;
+const pin = `kiln-gen==${kiln}`;
 const tabs = [
   {
     id: "skill",
     label: "Claude Code skill",
     steps: [
-      [`pip install "kiln @ ${pkg}"`, "install KILN (Python 3.11+)"],
+      [`pip install ${pin}`, "install KILN (Python 3.11+; on PyPI as kiln-gen)"],
       ["kiln skill install", "copy the skill into this repo's .claude/skills/"],
     ],
     then: `Then ask Claude: "I'm making a cosy siege game in the style of these screenshots; start with a bean knight that waddles."`,
@@ -19,16 +19,15 @@ const tabs = [
     id: "mcp",
     label: "MCP (any agent)",
     steps: [
-      [`pip install "kiln[mcp] @ ${pkg}"`, "KILN with the MCP server"],
-      ["claude mcp add kiln -- kiln mcp --project ./art", "or in any client: command `kiln mcp --project <dir>`"],
+      [`claude mcp add kiln -- uvx kiln-gen@${kiln} mcp --project /path/to/art`, "no install needed (uv); or `kiln mcp` after pip install"],
     ],
-    then: `Works with Claude Desktop, Claude Code, Cursor or your own agent. Previews come back as images. Add --allow-godot to let it verify builds in headless Godot.`,
+    then: `Works with Claude Desktop, Claude Code, Cursor or your own agent (command uvx, args kiln-gen@${kiln} mcp --project <dir>); listed in the MCP Registry as io.github.lukasgolino/kiln. Previews come back as images. Add --allow-godot to let it verify builds in headless Godot.`,
   },
   {
     id: "cli",
     label: "CLI",
     steps: [
-      [`pip install "kiln @ ${pkg}"`, "install"],
+      [`pip install ${pin}`, "install"],
       ["kiln init my-art --style soft_toy", "a project: kiln.toml, palette, models/, styles/"],
       ["cd my-art && kiln new model pilot --template bean", "a rigged bean to edit"],
       ["kiln lint && kiln preview pilot && kiln build", "check it, look at it, build it"],
@@ -42,7 +41,7 @@ const tabs = [
   <div class="wrap">
     <span class="eyebrow">Install</span>
     <h2>One line, then ask</h2>
-    <p class="lede">Requires Python 3.11+. Pin a tag so your models build the same way next year ({tag} is current).</p>
+    <p class="lede">Requires Python 3.11+. Pin a version so your models build the same way next year ({tag} is current). Upgrading from a <code>kiln @ git+…</code> install? Run <code>pip uninstall kiln</code> first: both packages own the same files.</p>
     <div class="tabs panel" id="install-tabs">
       <div role="tablist" aria-label="Install method">
         {

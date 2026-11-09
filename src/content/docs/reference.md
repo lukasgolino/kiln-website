@@ -1,10 +1,31 @@
-# KILN notation reference
+# KILN reference
 
-Units are **metres**. **+Y is up**, a model **faces +Z** (its front), **+X is its left**, and it **stands on y = 0**.
-Angles are degrees. Colours are names (or keys) from the project palette (PAGAN's `.pal.yaml` format); `"#rrggbb"`
-works but warns (W104).
+Everything an agent needs to write KILN models, one section per `kiln docs` topic.
 
-## Project
+## Setup
+
+Start of every session, a new project, kiln.toml and the project layout.
+
+### Start of every session
+
+1. `kiln status` (or MCP `status`): what exists, what needs review. No `kiln.toml`? `kiln init <dir> --style <preset>`
+   (inside a Godot project it writes `.gdignore` in the KILN folder, so Godot skips the sources and everything else under it,
+   the default `output_dir = "build"` included: point `output_dir` at a folder Godot sees, e.g. `../assets/kiln`; `kiln build`
+   with Godot export refuses an ignored one).
+2. Read `BRIEF.md` (what the game needs, decisions) and `STYLE.md` (how it looks). They are the project's memory.
+3. `kiln style show`: the style's notes (shape language, proportions) and numbers. Follow them.
+
+New project: ask the owner (one batch, each with your recommended default):
+- the game and the camera (how close does it get? that decides how much detail matters);
+- the style: a preset (`kiln style list`: soft_toy = Dear Passengers / Fall Guys, low_poly, toon, clay, diorama) or
+  inspirations. With inspirations, ask for 3-6 screenshots into `styles/<name>/inspiration/`, look at them, and write a
+  style that `extends` the closest preset (`kiln docs styles`);
+- the palette (the starter `palettes/main.pal.yaml`, or their colours);
+- whether the game is in Godot (then `export = ["glb", "godot"]` and `output_dir` inside the Godot project).
+Write the answers into BRIEF.md and STYLE.md.
+
+
+### Project
 
 ```
 kiln.toml            settings (kiln config show)
@@ -21,6 +42,7 @@ default_style = "soft_toy"     # kiln style list
 default_palette = "main"
 output_dir = "build"           # inside the Godot project when export has "godot"
 preview_dir = "previews"
+preview_size = 400             # optional: kiln preview tile size in pixels (64-1024; a hero face needs ~400+)
 export = ["glb", "godot"]
 style_version = 1
 variant_glbs = true            # false: no .glb per variant; Godot gets <name>.<variant>.tscn recolouring the base glb
@@ -35,7 +57,47 @@ godot_bonemap = false          # true: humanoids get models/<name>.bonemap.tres 
 disable = ["W106"]
 ```
 
-## Model file
+## Making
+
+Making a model: plan in metres, scaffold, parts, lint, look, fit with the rest; the model file.
+
+### Making a model
+
+1. **Plan on paper first, in metres.** Real sizes: a door is 2 m, a soldier 1.7 m (a toy-style bean 1-1.2 m), a
+   chair seat 0.45 m high, a barrel 0.9 m. Sketch the parts as a list: shape, centre, size, colour. Models stand on
+   y = 0, face +Z (their front), +X is their left.
+2. **Scaffold:** `kiln new model <name> --template bean|prop|empty --class character|prop|building|...`.
+3. **Write the parts** (`kiln docs parts`). Big shapes first, details after. Rules of thumb:
+   - Join body parts with `blend` (0.02-0.06 m in soft styles); give crisp seams (`blend: 0`, the default) to things
+     that sit ON a surface: eyes, buttons, belts, trims.
+   - Symmetric things: write the left one (+X) with `mirror: x`; if it must move separately (arms, legs) add
+     `mirror_id: arm_r` so the copy is its own part.
+   - Holes and openings: a `cut: true` part after the solid. Hollow things: `shell: <thickness>`.
+   - Many regular repeats: `array` (in a row or a ring), or a generator script with `kiln.api` (`kiln docs api`).
+   - Every colour is a palette name. Materials are the style's presets (plastic, fabric, skin, leather, wood, stone,
+     metal, gold, leaf, glass, rubber, paint, glow).
+   - Big plain areas read better with geometry than patterns: planks, trims and shields as parts. Patterns cost
+     triangles (W110); keep them for clothes and small props.
+   - Things meant to float (flames, bees, sparks, rubble bits): `loose: true` on the part, so W103 stays meaningful.
+   - Many similar models (8 soldier types, 5 trees): one `template: true` base and `extends: <base>` models that
+     `remove:` and add parts (Model families, below), instead of copies.
+4. **Lint:** `kiln lint <name>`. Fix every error; read every warning (W101 a part is hidden, W102 too thin to mesh,
+   W103 floating pieces, W106 not standing on the ground, W108 size wrong for the class).
+5. **Look:** `kiln preview <name>` writes a turntable (8 sides x below / eye level / above). Open it and check:
+   silhouette from every side, proportions, nothing floating, nothing poking through, the face reads, colours
+   balanced. Then `--closeup <part>` for anything seen up close (faces, hands, hit zones), and `--detach` when the
+   model has detachable (`separate`) parts: each one off, and what's under it. Iterate until it's right.
+   You will misjudge proportions without looking: always look.
+   For people, start from the template library (`kiln library`; `extends: [body_..., head_..., helmet_..., armour_...]`)
+   and add or override parts, instead of building bodies and faces from scratch. To hide the head's hair under a
+   helmet (its own piece, shown again when the helmet comes off): `rig: { hair: { parent: head, revealed: [helmet], fold: true } }`.
+6. **Fit with the rest:** `kiln lineup` (same scale, one ground line, a 1 m bar) and `kiln preview <name> --vs`
+   (beside the inspiration images). Does it look like it belongs in the same game?
+7. **Report** to the owner with the preview images. When they approve: `kiln mark <name> --approved`, tick it in
+   BRIEF.md, and `kiln build`.
+
+
+### Model file
 
 ```yaml
 name: pilot                    # = file name (pilot.kiln.yaml)
@@ -47,8 +109,13 @@ style_version: 1
 style: soft_toy                # optional: else kiln.toml default_style
 palette: main                  # optional: else default_palette
 budget: 6000                   # optional: triangles (overrides the style's budget for the class)
+resolution: 0.004              # optional: metres per mesh cell for this model, as is (not scaled by size): finer detail
+normal_map: 1024               # optional: bake a normal map (256-4096 texels, needs kiln-gen[bake]; not with atlas = true or source:): detail from the shapes, not triangles
+normal_strength: 1             # optional: scales the map's tilt (0.5 softer grooves, 0 flat), up to 4 (steep slopes cap)
+max_cells: 640                 # optional: mesh cells across at most (64-1024, style default 256); W120 says when it decides
 lod: [2500, 800]               # optional: extra lower-detail .glb files
-origin: center                 # optional: the .glb's origin: base (bottom centre of the box) | center (spinning debris) | [x, y, z]
+origin: center                 # optional: the .glb's origin: base (bottom centre of the box) | center (spinning debris) | ground
+                               #   ([0, lowest point, 0]: the built mesh lifted onto y = 0, W123) | [x, y, z]
                                #   (default: model space as written; manifest `origin` = that point, other manifest values stay model space)
 node_prefix: Knight_           # optional: mesh nodes are Knight_<id> children of the part nodes (bones keep the ids;
                                # a soft skin's mesh is Knight_mesh); manifest parts get mesh_node
@@ -64,7 +131,7 @@ variants:                      # optional: recoloured copies (<name>.<variant>.g
 lint: { disable: [W106] }
 ```
 
-### Model families
+#### Model families
 
 A model can `extends: <base>` a `template: true` model in the same folder (templates are checked but not built):
 soldiers sharing one body, trees sharing one trunk.
@@ -95,6 +162,10 @@ Size classes in the built-in styles: prop, character, hero, creature, vehicle, m
 
 ## Parts
 
+Part notation: every shape, blend, cut, mirror, array, shell, patterns, decals, hardware.
+
+### Parts
+
 Each part is one shape plus options. Parts are combined **in order**: each one joins (or cuts) what came before.
 
 ```yaml
@@ -106,7 +177,7 @@ parts:
     blend: 0.04                # smooth join radius with what's before it (0 = crisp seam)
 ```
 
-### Shapes
+#### Shapes
 
 Every shape takes `at: [x, y, z]` (its centre; default [0, 0, 0]) and `rotate: [x, y, z]` (degrees, applied x
 then y then z, about its centre).
@@ -116,10 +187,11 @@ then y then z, about its centre).
 | `sphere` | `radius` |
 | `ellipsoid` | `radii: [x, y, z]` |
 | `box` | `size: [x, y, z]`, `round` (edge radius; size kept) |
-| `cylinder` | `radius`, `height` (along y), `round`, `sides` (8: an octagonal prism, a flat side facing +z) |
-| `cone` | `radius` (bottom), `radius_top` (0 = point), `height` (along y), `sides` (4: a pyramid) |
+| `cylinder` | `radius`, `height` (along y), `round`, `sides` (8: an octagonal prism, a flat side facing +z). `at` is its middle: half of it is below `at` (or place it by its ends with `aim`) |
+| `cone` | `radius` (bottom), `radius_top` (0 = point), `height` (along y), `sides` (4: a pyramid). `at` is its middle, not its base: a tuft set `at` a surface is half buried. Stand it on a point with `aim: [[base], [tip]]` (y runs base to tip; without a `height`, the distance between them) |
 | `capsule` | `from: [x, y, z]`, `to: [x, y, z]`, `radius`, `radius_to` (taper) |
 | `tube` | `points: [[x, y, z], ...]` (2+), `radius`, `radius_to`: ropes, branches, rails, tails |
+| `lock` | `points` (2+), `width`, `thickness`, `width_to`, `thickness_to`, `facing: [x, y, z]`: a flat blade along a path (fur and hair locks, feathers, leaves, petals); `width_to: 0` is a pointed tip; the flat sides look along `facing` |
 | `torus` | `radius` (ring), `thickness` (tube radius); ring in the xz plane (rotate for others) |
 | `lathe` | `profile: [[r, y], ...]` spun around y: vases, bottles, bells, caps, chess pieces, round towers. The profile is a closed outline in the (radius, height) plane: go up the outside and come back down the axis (points with r = 0), e.g. a cap `[[0, 1.06], [0.2, 1.02], [0.3, 0.9], [0.3, 0.8], [0, 0.8]]`. Corners are rounded (`smooth: true`, default); `smooth: false` keeps them sharp |
 | `extrude` | `points: [[x, z], ...]` outline seen from above (3+ different points; repeats and a closing point are dropped), `height` (along y), `round`, `holes: [[[x, z], ...], ...]` (outlines cut through: letters O, A, B; `round` rounds their edges too; hard parts: hole edges stay sharp), `offset` (grow the outline by metres, < 0 shrinks: inset face plates). Or `path: "M 0 0 L 1 0 Q 1 1 0 1 Z"` (SVG path data: M L H V C S Q T A Z, absolute and relative; y runs down onto z, so `rotate: [90, 0, 0]` stands it up reading right from the front) with `path_scale` (metres per unit: 0.001 for a 1000-unit font em) and `path_tolerance` (0.002 m): every subpath is an outline, even-odd (counters are holes, separate shapes are islands). Or `text: "OPEN"` in `font: fonts/sign.ttf` (.ttf/.otf, relative to the project folder) with `text_size` (metres per em, 0.1), `text_align` (left, center, right: about x = 0), `letter_spacing` (metres), `line_spacing` (ems, 1.2; `\n` starts a line), `font_axes` (a variable font's instance: `{ wght: 900 }`; default: its default instance): first baseline at z = 0, glyphs toward -z; no kerning or shaping. Glyphs fill like fonts do (nonzero): overlapping contours join instead of cutting holes. Check the font's licence before shipping its shapes. Shields, signs, floor plans, stars, letters |
@@ -130,7 +202,7 @@ then y then z, about its centre).
 For `capsule` and `tube`, the points are in the part's frame (moved by `at`, turned by `rotate`). Everything else in a
 model (decal `at`, rig pivots, poses' offsets) is in model space.
 
-### Part options
+#### Part options
 
 | option | meaning |
 |---|---|
@@ -143,13 +215,17 @@ model (decal `at`, rig pivots, poses' offsets) is in model space.
 | `mirror: x` | also on the other side of 0 (x, y, z or a list); same id |
 | `mirror_id: arm_r` | with `mirror: x`: the copy is a separate part with this id (rig entries are mirrored too) |
 | `array: { count: 4, step: [1, 0, 0] }` | repeat in a row |
-| `array: { count: 8, around: y, center: [0, 0, 0], angle: 360 }` | repeat in a ring (`around` may be any direction `[x, y, z]`: a ring on a tilted wheel) |
+| `array: { count: 8, around: y, center: [0, 0, 0], angle: 360 }` | repeat in a ring (`around` may be any direction `[x, y, z]`: a ring on a tilted wheel). The first copy is the part as written; the others turn about `around` through `center`, counter-clockwise seen from the tip of `around` (right-handed: +90 degrees about y takes +z to +x), and each copy is turned with the ring, not only moved (it faces outwards as the first does, also on a tilted axis). `angle` under 360 is an arc from the part as written to `angle`, both ends included (count - 1 gaps); negative runs clockwise. A fringe across the back only: write the first tuft at one end, e.g. at `[0.1, y, -0.1]` (the model's left is +x, its back -z), and give the arc's span: `angle: 90` ends at `[-0.1, y, -0.1]`. A full ring's count spreads evenly (no copy at 360) |
 | `shell: 0.02` | hollow, walls this thick (centred on the surface) |
 | `shell: { thickness: 0.02, open: -y }` | a wall inside the surface (the outside stays put), one side cut open at the shape's centre: helmets, bowls, pots, shields with a visible rim (`side: both` centres it) |
 | `fit: head` or `fit: { to: head, gap: 0.01 }` | with `shell`: the wall wraps the parts with that id, `gap` away from them, wherever this part's own shape reaches (its shape is the coverage: a sphere around the head, `open: -y` and placed low enough to cover the cheeks). Helmets that sit on the head instead of perching on it; cut a face opening after it (before the head, so the cut doesn't take the face) |
 | `twist: 90` | degrees per metre about the shape's y axis |
-| `noise: { amount: 0.01, scale: 0.2, seed: 3 }` | lumpy surface (rocks, bark, clay): amount in metres, scale = bump size |
+| `blend_to: torso` (or a list of ids) | with `blend`: melt only into those earlier parts, meet every other part crisply: fur locks that melt into the body but keep a groove between each other |
+| `detail: true` | only in the model's baked normal map (`normal_map:`), never in the mesh: grooves between fur strands (a thin `cut: true` tube), wrinkles, knuckle creases, scratches, fine `noise` on a coarse, light mesh. Lint W121: no map, or thinner than two texels. A texel is about sqrt(2 x surface area) / map size (a 2.4 m character, about 4 m² of surface, at 2048: ~1.5 mm): grooves read when about 4 texels wide or more; finer ones blur out (each texel is filtered), and deep narrow ones make bright specular lines: shallower and wider, or `normal_strength: 0.5` |
+| `scale: [1, 1, 0.4]` | stretch the shape in its own frame (or one number); soft parts only |
+| `noise: { amount: 0.01, scale: 0.2, seed: 3 }` | lumpy surface (rocks, bark, clay): amount in metres, scale = bump size. Colour borders with other parts follow the smooth shapes, so a patch on a noisy part keeps a clean edge |
 | `pattern: {...}` | a second colour painted on the part (below) |
+| `gradient: { to: fur_light, steps: 3 }` | the part's colour going to `to` in `steps` bands (2-16, default 3), mixed in OKLab; `from:` replaces the part's colour at the start. `along: path` (the default for tube, capsule and lock: first point to last) or `x`/`y`/`z` (the default for other shapes: across the shape's own box, low to high). Patterns paint over it; variants recolour the mixed bands from the swapped ends |
 | `decal: {...}` | an image on the part (below) |
 | `loose: true` | this part may float free (flames, bees, sparks, rubble): W103 doesn't count it |
 | `blend: none` | a hard part, joined crisply (below) |
@@ -164,9 +240,12 @@ model (decal `at`, rig pivots, poses' offsets) is in model space.
 Order matters: details that sit on a surface come **after** it. A part completely inside later parts shows nothing
 (W101). A cut removes material from what came before it, and paint follows: a door placed after the cut that made its
 archway is painted as the door, not as the wall. Parts thinner than about two mesh cells break up (W102): resolution comes from the style (soft_toy: 8 mm
-for a ~1 m model, coarser for bigger models).
+for a ~1 m model, coarser for bigger models: x sqrt(size), and at most 256 cells across). `kiln build` prints the cell
+size each model got (manifest `step`). Finer detail on a hero: `resolution: 0.004` and `max_cells: 640` in the model
+(lint W120 names the max_cells needed). Halving the cell size about triples build time and memory; the budget still
+decides the final triangles.
 
-### Hard surface
+#### Hard surface
 
 Smooth parts are sampled from the distance field and reduced to the budget: soft clay-toy shapes. **Hard** parts are
 made as exact polygons instead: designed facets, crisp creases, octagonal wheels, planks, beams, armour plates, the
@@ -187,7 +266,7 @@ bands shade round and designed edges stay crisp.
     color: wood_dark
 ```
 
-### Hardware
+#### Hardware
 
 Written like a shape, each stands for several ordinary parts (hard by default); the part's other fields (colour,
 material, id, mirror, ...) go to each.
@@ -200,7 +279,7 @@ material, id, mirror, ...) go to each.
 | `bolt: { at: [x, y, z], radius: 0.02, length: 0.02 }` | a hex bolt head along y (rotate it) |
 | `slit: { at: [x, y, z], size: [0.3, 0.04, 0.3] }` | a cut: visor and arrow slits |
 
-### Patterns
+#### Patterns
 
 ```yaml
     pattern: { type: stripes, color: gold, size: 0.06, width: 0.3, axis: y }
@@ -214,7 +293,7 @@ material, id, mirror, ...) go to each.
 - `checker`: checks `size` metres across.
 - `dots`: dots on a grid `size` metres apart, diameter `width` x size.
 
-### Decals
+#### Decals
 
 ```yaml
     decal: { image: decals/logo.png, axis: z, at: [0, 0.6, 0.3], size: [0.2, 0.1] }
@@ -225,7 +304,158 @@ Projects an image (PNG with transparency, e.g. made with PAGAN) onto the faces o
 shows on that side only (a flag needs a second decal with `axis: -z` for its back). Transparent pixels show the part's colour.
 Small images (<= 256 px) are sampled crisp (pixel art).
 
-## Rig and skin
+## Templates
+
+The template library: bodies, heads, helmets, armour to extend.
+
+### Template library
+
+`kiln library` lists KILN's own templates: bodies (`body_slim`, `body_stocky`, `body_big`: standard joints, layered
+clothes, gloves, boots, a `grip` socket per hand), heads (`head_young`, `head_old`, `head_bearded`, `head_stern`,
+`head_goofy`, `head_female`), helmets (`helmet_kettle`, `helmet_nasal`, `helmet_barbute`, `helmet_great`,
+`helmet_sallet`, `helmet_crown`: detachable, fitted to whatever head they go on) and armour (`armour_breastplate`,
+`armour_pauldrons`, `armour_gauntlets`, `armour_cape`, `armour_hood`: shells fitted to the body). Combine them:
+
+```yaml
+name: sergeant
+class: character
+extends: [body_stocky, head_bearded, helmet_nasal, armour_cape]   # in order; a project template of the same name wins
+variants: { blue: { swap: { cloth_red: cloth_blue } } }
+animations:
+  walk: { import: imports/Rig_Medium_MovementBasic.glb, clip: Walking_A }
+```
+
+or `kiln new model sergeant --extends body_stocky,head_bearded,helmet_nasal,armour_cape`. Their colours are the
+library palette `people` (found without copying; copy it into palettes/ to change it). `extends` takes a list (bases
+combine in order); `cut: <id>` cuts only that id (a helmet's face opening, not the face); `fit: { to: [ids] }` wraps
+several parts. Fitted shells are their own meshes.
+
+The heads' hair is the id `hair`, folded into `head` (`fold: true`, see Rig and skin), so helmets fit over it and
+follow its lumps. To hide it under the helmet instead (as KayKit's helmets replace the hair), add to the model:
+
+```yaml
+rig:
+  hair: { parent: head, revealed: [helmet], fold: true }   # hair hidden until the helmet (id helmet) comes off
+```
+
+The hair is then its own piece, hidden by the scenes and previews until the helmet comes off, and the helmet fits the
+skull (`to: head`). Without a helmet it folds back into `head`. Leave it out for a crown (worn over the hair).
+
+## Styles
+
+Styles and inspirations: presets, extends, the look kit; style notation.
+
+### Styles and inspirations
+
+A style (`styles/<name>.style.toml`, usually `extends = "soft_toy"` or another preset) decides: smooth or faceted
+(`[shape]`), mesh resolution, triangle budgets per class, material presets (roughness, metal, glow, rim) and the
+look kit (`[look]`: shader standard/toon (bands, softness, shadow colour, specular, banded shadows), outline
+(metres or pixels, one colour or each part's darkened), tonemapper, exposure, saturation, contrast, SSAO, glow, sky,
+sun, fog). The `notes` field holds the shape language and proportions in words: write it, and follow it.
+
+From inspirations: look at the images; describe shapes (rounded? chunky? faceted?), proportions (head size, limb
+thickness, eye size), colour (how saturated, how many per object), materials (glossy? matte?) and light (soft?
+warm? outlines?). Pick the closest preset, `kiln style new <name> --extends <preset>`, override what differs, write
+the notes, make one test model, compare with `kiln preview <model> --vs`, adjust, and get the owner's yes before
+making more. Inspiration images are reference only: never copy another game's characters, and never model real
+people.
+
+Changing the look later: edit the style (and the palette): every model follows on the next build. If models
+themselves must change, `kiln style bump -m "why"`; `kiln status` then flags older models for review.
+
+
+### Styles
+
+```toml
+# styles/sky_pirates.style.toml
+description = "Chunky toy airships, warm sunset light"
+extends = "soft_toy"           # soft_toy | low_poly | toon | clay | diorama | another project style
+notes = """Shapes, proportions, colours, materials, lighting in words (agents follow this)."""
+
+[shape]
+smooth = true                  # false = faceted (flat normals)
+sharp_angle = 50               # smooth styles: edges sharper than this stay crisp
+resolution = 0.008             # metres per mesh cell for a ~1 m model (finer = rounder, slower)
+max_cells = 256                # mesh cells across a model at most (64-1024): bigger models get coarser cells past it
+scale_with_size = true         # models over 1 m get resolution x sqrt(size); false: resolution as is
+
+[budgets]                      # triangles per class
+character = 8000
+default = 4000
+
+[materials]                    # roughness, metallic (0..1), emission (glow strength), rim (soft edge light)
+plastic = { roughness = 0.42 }
+
+[look]                         # the Godot look kit and preview lighting
+shader = "standard"            # standard | toon
+toon_bands = 3
+toon_softness = 0.0            # toon: 0 = hard band steps; up to 1 = each edge blends over a whole band (0.2-0.4: soft cel)
+toon_shadow_color = ""         # toon: "" = shadows only darken; "#rrggbb" or a palette colour = the sun's missing light in
+                               # that colour (warm/cool shading; a light colour tints more; per model with its palette)
+toon_specular = 0.0            # toon: one hard highlight blob, strength 0..1 (size grows and strength fades with roughness)
+toon_shadows = "soft"          # toon: soft = Godot's received shadows; band = they drop into the darkest band (Godot only)
+outline = 0.0                  # metres (toon outlines), 0 = none; pixels with outline_space = "pixels" (e.g. 2)
+outline_color = "#1a1420"      # or "darken": each part's own colour, darkened
+outline_space = "metres"       # metres: a shell that thins with distance; pixels: constant thickness on screen
+tonemapper = "filmic"          # linear | filmic | aces | agx
+exposure = 1.0
+saturation = 1.15
+contrast = 1.0
+ssao = true
+glow = true
+ambient = 0.9
+sky_top = "#4f8fe0"
+sky_horizon = "#bcd7f2"
+ground = "#a9c48f"
+sun_pitch = -48.0              # degrees (negative = from above)
+sun_yaw = 30.0
+sun_energy = 1.1
+sun_color = "#fff6e8"
+shadows = true
+fog = 0.0
+fog_color = "#c8d8e8"
+rim_light = 0.0                # an added fresnel rim on every surface (Godot: a next pass; previews too): 0.5-1 reads on bright skies
+rim_light_color = "#ffffff"
+rim_light_power = 3.0          # higher: thinner rim
+```
+
+Every toon key is off by default (today's plain cel look). Wind Waker / Sable-style: `toon_softness = 0.2`,
+`toon_shadow_color` a cool mid tone, `toon_specular = 0.6` on glossy materials, `toon_shadows = "band"`,
+`outline_space = "pixels"` with `outline = 2` and `outline_color = "darken"`. Previews follow every key except
+`toon_shadows` (the software renderer has no cast shadows; `kiln preview --engine` shows them).
+
+## Rigs
+
+Characters, rigs, skins and sockets; rig notation.
+
+### Characters, rigs and animation
+
+- **Characters for the soft styles:** bean/pear body (one capsule, radius 0.25-0.35), stubby limbs (capsules
+  0.07-0.1 thick), big eyes (white sphere ~0.1 + black pupil ~0.04 pushed slightly forward), tiny or no mouth.
+  Hats, helmets, hair: separate shapes on top, crisp seams. Heads on caricatures: an ellipsoid blended into the
+  body with a big nose ellipsoid blended in. Keep hands simple (a sphere or mitten).
+- **Rig** what moves: give it an `id`, then `rig: { id: { pivot: [joint], parent: id } }`. Pivots are the joint
+  positions (hip, shoulder, hinge, axle). Without a pivot a part turns about its box centre (W109).
+- **Skin:** `rigid` (each part moves as one piece: robots, machines, props, toys) or `soft` (one mesh that bends
+  where parts blend: creatures, bean characters). `separate: true` keeps a part rigid inside a soft skin
+  (detachable helmet). Rigid joints that turn far (ragdolls): `union: per_bone`, so no turn opens the mesh.
+- **Animations:** explicit `poses` (one per frame, per part: offset/rotate/scale) or a `cycle` that writes the
+  poses for you: walk, waddle, hop, bob, spin, swing, breathe, wave, chain (`kiln docs animations`). Both together: the cycle
+  moves everything, and parts named in the poses follow the poses (walking while carrying).
+- **CC0 clip libraries:** a `skeleton: humanoid` character plays imported clips
+  (`walk: { import: imports/clips.glb, clip: Walking_A }`); any other skeleton (quadrupeds, birds) plays them through
+  `skeleton: { map: { <part id>: <clip joint>, ... }, root_motion: <clip joint> }` (`kiln docs humanoids`, "Clips on any skeleton").
+- **Cloth and flags:** split them into 3-4 segments along their length, each its own id parented to the previous one
+  (pivots on the seams), crisp seams (`blend: 0`), `skin: soft`, and animate with `cycle: { type: chain, parts: [...] }`. Check every animation with
+  `kiln preview <name> --pose <animation>`: the filmstrip shows each frame from the front and the side.
+- Gameplay data on parts: `rig: { helmet: { meta: { hitzone: head, detachable: true, socket: [0, 1.6, 0.1] } } }` ->
+  node metadata in Godot and in the manifest, which also gives every part's box (`aabb`) for hit zones.
+- Detachables (`separate: true`) are meshed on their own, so they may overlap the body and leave no hole when removed.
+- Points the game needs on a part (a weapon's muzzle, a hand slot, a catapult's load, a seat): `sockets` in the rig
+  entry; they become nodes that move with the part.
+
+
+### Rig and skin
 
 ```yaml
 rig:
@@ -270,40 +500,57 @@ skin: soft
   empty child node `<id>_<name>` that moves with the part (Godot: a Node3D under a BoneAttachment3D on soft skins), and
   the manifest gives its position and its offset from the pivot. Mirrored twins get mirrored sockets.
 
-## Template library
+## Animations
 
-`kiln library` lists KILN's own templates: bodies (`body_slim`, `body_stocky`, `body_big`: standard joints, layered
-clothes, gloves, boots, a `grip` socket per hand), heads (`head_young`, `head_old`, `head_bearded`, `head_stern`,
-`head_goofy`, `head_female`), helmets (`helmet_kettle`, `helmet_nasal`, `helmet_barbute`, `helmet_great`,
-`helmet_sallet`, `helmet_crown`: detachable, fitted to whatever head they go on) and armour (`armour_breastplate`,
-`armour_pauldrons`, `armour_gauntlets`, `armour_cape`, `armour_hood`: shells fitted to the body). Combine them:
+Animation notation: poses, cycles, imported clips.
+
+### Animations
+
+Names are letters, digits, `_` or `-`, any case (imported clips can keep their library names: `Idle_A`); two names
+that differ only in case are an error.
 
 ```yaml
-name: sergeant
-class: character
-extends: [body_stocky, head_bearded, helmet_nasal, armour_cape]   # in order; a project template of the same name wins
-variants: { blue: { swap: { cloth_red: cloth_blue } } }
 animations:
-  walk: { import: imports/Rig_Medium_MovementBasic.glb, clip: Walking_A }
+  wave:
+    fps: 8
+    loop: false                # default true (Godot loops it: glTF name "<name>-loop")
+    interpolation: linear      # linear | step
+    poses:                     # one per frame; a missing part = its rest pose
+      - {}
+      - { arm_r: { rotate: [0, 0, -120] } }
+      - { arm_r: { rotate: [0, 0, -150] }, root: { offset: [0, 0.02, 0] } }
+  walk: { fps: 12, cycle: { type: waddle, legs: [leg_l, leg_r], arms: [arm_l, arm_r] } }
+  carry:                       # a cycle plus poses: poses repeat over the cycle's frames, and a part named in a
+    fps: 12                    # pose follows the pose instead of the cycle (walking legs + arms holding a crate)
+    cycle: { type: walk, legs: [leg_l, leg_r], arms: [] }
+    poses: [{ arm_l: { rotate: [-70, 0, 0] }, arm_r: { rotate: [-70, 0, 0] } }]
 ```
 
-or `kiln new model sergeant --extends body_stocky,head_bearded,helmet_nasal,armour_cape`. Their colours are the
-library palette `people` (found without copying; copy it into palettes/ to change it). `extends` takes a list (bases
-combine in order); `cut: <id>` cuts only that id (a helmet's face opening, not the face); `fit: { to: [ids] }` wraps
-several parts. Fitted shells are their own meshes.
+Pose fields per part: `offset: [x, y, z]` (metres), `rotate: [x, y, z]` (degrees, about the pivot), `scale: s` or
+`[x, y, z]` (squash and stretch). Signs: positive x tips the part's top towards the front (+Z), so a hanging leg or arm
+swings backwards with positive x and forwards with negative x; a drawbridge hinged at its bottom lowers forwards with
+positive x. About z: negative raises a right arm (-X side), positive raises a left arm. About y: positive turns
+left (counter-clockwise seen from above).
 
-The heads' hair is the id `hair`, folded into `head` (`fold: true`, see Rig and skin), so helmets fit over it and
-follow its lumps. To hide it under the helmet instead (as KayKit's helmets replace the hair), add to the model:
+Cycles (8 frames unless `frames:`):
 
-```yaml
-rig:
-  hair: { parent: head, revealed: [helmet], fold: true }   # hair hidden until the helmet (id helmet) comes off
-```
+| type | options (defaults) |
+|---|---|
+| `walk` | `legs` [leg_l, leg_r], `arms` [arm_l, arm_r], `body` root, `swing` 30, `arm_swing` 25, `bounce` 0.02 |
+| `waddle` | as walk + `roll` 8 (side-to-side), `swing` 18 |
+| `hop` | `part` root, `height` 0.2, `squash` 0.1 |
+| `bob` | `part`, `amount` 0.05 |
+| `spin` | `part`, `axis` y, `direction` 1 |
+| `swing` | `part`, `axis` y, `angle` 20 |
+| `breathe` | `part`, `amount` 0.03 |
+| `wave` | `arms` (the last one waves), `raise` 150, `angle` 20 |
+| `chain` | `parts` [ids in order from the root out; default: every id in file order], `axis` y, `angle` 15, `phase` 0.15: a travelling wave for flags, tails, tentacles, ropes |
 
-The hair is then its own piece, hidden by the scenes and previews until the helmet comes off, and the helmet fits the
-skull (`to: head`). Without a helmet it folds back into `head`. Leave it out for a crown (worn over the hair).
+## Humanoids
 
-## Humanoids and clip libraries
+Humanoids, CC0 clip libraries, clips on any skeleton, attachments for CC0 characters.
+
+### Humanoids and clip libraries
 
 `skeleton: humanoid` names a character's parts after the standard joints: `hips`, `spine`, `chest`, `head`,
 `upperarm_l`, `lowerarm_l`, `hand_l`, `upperleg_l`, `lowerleg_l`, `foot_l` (and `_r`, usually by `mirror_id`;
@@ -342,7 +589,7 @@ BoneAttachment3D names in game code must use the new names (manifest `humanoid` 
 names KILN's bones. Turning it off removes the files and the `.import` setting again (Godot reimports with KILN's
 names).
 
-### Clips on any skeleton (joint map)
+#### Clips on any skeleton (joint map)
 
 A creature that isn't a humanoid (a quadruped, a bird) plays a clip library made for another armature through a
 map from its part ids (bones) to the clip's joints:
@@ -381,7 +628,8 @@ when it isn't mapped (`Torso` above), the bone mapped to its nearest mapped join
 Findings (E007): a map key that isn't a part id (or is `root`), a `child` that isn't a mapped bone below it; (E008)
 a mapped joint or `root_motion` the clip file doesn't have (with the nearest names). Check with `--pose <animation>`.
 
-## Attachments for CC0 characters
+
+### Attachments for CC0 characters
 
 A helmet, shield or banner made around a CC0 character (a KayKit Knight) instead of a KILN body:
 
@@ -399,6 +647,10 @@ bone }`. W113 warns when it sinks into the character. `kiln preview <model> --fi
 character without it.
 
 ## Effects
+
+Effects: pre-rolled particle descriptions (effect.json).
+
+### Effects
 
 A burst (an explosion's debris, sparks, puffs of smoke) as other models thrown out over time. KILN doesn't play
 effects: `kiln build` writes `models/<name>.effect.json` (manifest `effect`) with every particle already rolled from
@@ -437,6 +689,10 @@ starts again from that position and velocity, `[0, 0, 0]` = resting there withou
 E011 when an emitted model doesn't exist.
 
 ## Terrains
+
+Terrains: height shapes, splats, chunked LOD meshes.
+
+### Terrains
 
 A model with `terrain:` instead of `parts:` is a heightfield (one height per x, z) with up to four splat layers of
 palette colours: ground for a level. Only `name`, `description`, `tags`, `status`, `style_version`, `class` (default
@@ -492,6 +748,10 @@ Tools (foliage scattering, props on the ground) read the heightfield in Python:
 heightfield as a distance field) and `bounds()`; arrays in, arrays out, bilinear between grid points.
 
 ## Scatters
+
+Scatters: foliage and props over a terrain or model.
+
+### Scatters
 
 A model with `scatter:` instead of `parts:` places other models many times over a surface: grass, flowers, rocks and
 trees on a terrain, moss on a boulder, pebbles on a flat area. Only `name`, `description`, `tags`, `status`,
@@ -555,49 +815,40 @@ distances than the model has LODs, `splat`/`path` without a terrain, an unknown 
 in an entry or 200 000 instances in a scatter), W118 an entry places more than 50 000 instances, W119 an entry places
 none.
 
-## Animations
+## Imported
 
-Names are letters, digits, `_` or `-`, any case (imported clips can keep their library names: `Idle_A`); two names
-that differ only in case are an error.
+Imported models: CC0 packs, kiln import, matching a reference.
 
-```yaml
-animations:
-  wave:
-    fps: 8
-    loop: false                # default true (Godot loops it: glTF name "<name>-loop")
-    interpolation: linear      # linear | step
-    poses:                     # one per frame; a missing part = its rest pose
-      - {}
-      - { arm_r: { rotate: [0, 0, -120] } }
-      - { arm_r: { rotate: [0, 0, -150] }, root: { offset: [0, 0.02, 0] } }
-  walk: { fps: 12, cycle: { type: waddle, legs: [leg_l, leg_r], arms: [arm_l, arm_r] } }
-  carry:                       # a cycle plus poses: poses repeat over the cycle's frames, and a part named in a
-    fps: 12                    # pose follows the pose instead of the cycle (walking legs + arms holding a crate)
-    cycle: { type: walk, legs: [leg_l, leg_r], arms: [] }
-    poses: [{ arm_l: { rotate: [-70, 0, 0] }, arm_r: { rotate: [-70, 0, 0] } }]
-```
+### Imported models (free CC0 packs)
 
-Pose fields per part: `offset: [x, y, z]` (metres), `rotate: [x, y, z]` (degrees, about the pivot), `scale: s` or
-`[x, y, z]` (squash and stretch). Signs: positive x tips the part's top towards the front (+Z), so a hanging leg or arm
-swings backwards with positive x and forwards with negative x; a drawbridge hinged at its bottom lowers forwards with
-positive x. About z: negative raises a right arm (-X side), positive raises a left arm. About y: positive turns
-left (counter-clockwise seen from above).
+For things text does badly (dense foliage, realistic rocks, detailed props), use free packs: Kenney, KayKit,
+Quaternius (CC0), Poly Pizza (CC0/CC-BY). `kiln import <file.glb> --licence CC0-1.0 --author ... --url ...
+--height 2.5` copies it into `imports/`, writes a model with `source:`; the build scales it, stands it on the
+ground, snaps its colours to the palette and applies the style's materials. `kiln credits` and `CREDITS.md` list
+authors. Never use assets whose licence forbids it (NC, ND, SA, Synty, anything "no AI"). An .fbx/.blend/.obj
+imports the same way when Blender 4.x is installed (`BLENDER=/path/to/blender`): `kiln import` turns it into
+`imports/<name>.glb` once, so prefer that over naming the .fbx in `source:` (every build would need Blender).
 
-Cycles (8 frames unless `frames:`):
+Shipped CC0 packs: `kiln pack list`; the owner mirrors one with `kiln pack add <pack>` (it downloads; ask first).
+`kiln pack search knight --json` (MCP `pack_search`, `lineup: true` for a sheet of the hits) finds models by name and
+tags with triangles and size; `kiln pack import <pack> <name> --height 1.8` (MCP `pack_import`) copies it into
+`imports/<pack>/` and records it in `kiln.lock`, which the build checks (E014: a changed file, a non-CC0 licence).
 
-| type | options (defaults) |
-|---|---|
-| `walk` | `legs` [leg_l, leg_r], `arms` [arm_l, arm_r], `body` root, `swing` 30, `arm_swing` 25, `bounce` 0.02 |
-| `waddle` | as walk + `roll` 8 (side-to-side), `swing` 18 |
-| `hop` | `part` root, `height` 0.2, `squash` 0.1 |
-| `bob` | `part`, `amount` 0.05 |
-| `spin` | `part`, `axis` y, `direction` 1 |
-| `swing` | `part`, `axis` y, `angle` 20 |
-| `breathe` | `part`, `amount` 0.03 |
-| `wave` | `arms` (the last one waves), `raise` 150, `angle` 20 |
-| `chain` | `parts` [ids in order from the root out; default: every id in file order], `axis` y, `angle` 15, `phase` 0.15: a travelling wave for flags, tails, tentacles, ropes |
+**Match a reference** (make a KILN model that holds its own next to a CC0 asset, e.g. a KayKit barrel):
+1. Put the reference in `imports/` and ask the owner for thresholds, with defaults: silhouette `iou` >= 0.9 (and
+   `iou_min` >= 0.85), `triangle_ratio` <= 1.5, `surfaces` <= the reference's + 1, `colors` within +-2,
+   `open_edges` 0, and for a faceted (low poly) target `facet_regularity` >= 0.7 (use a hard-surface style or parts).
+2. `kiln preview <model> --vs imports/<ref>.glb --ref-height <the model's intended height> --json` (MCP: `preview`
+   with `which: "vs"`, `reference`, `ref_height`). Read `compare` and LOOK at the sheet: the silhouette row shows red
+   where the model sticks out and blue where it is missing, per view.
+3. Change the model (proportions, part sizes, budget, `sides`, colours), lint, and repeat step 2 until every metric is
+   inside the thresholds. Fix the worst view first (`iou_views`). Don't copy the reference's details one for one:
+   match its size, outline, density and colour count; the design stays ours.
+4. Report both renders (the vs sheet) and the final metrics against the thresholds; say which ones you couldn't meet
+   and why.
 
-## Imported models
+
+### Imported models
 
 ```yaml
 name: oak
@@ -625,7 +876,7 @@ No Blender, or one older than 4: E010 (E008 for an animation `import:`) saying h
 shows the end of Blender's output. FBX clip names carry Blender's armature prefixes (a `Wave` action came out as
 `Rig|Rig|Wave`); a wrong `clip:` lists the real names.
 
-### CC0 packs (`kiln pack`)
+#### CC0 packs (`kiln pack`)
 
 KILN ships recipes for CC0 packs (`kiln pack list`): Kenney (`kenney-mini-dungeon`), KayKit (`kaykit-adventurers`,
 `kaykit-furniture-bits`, `kaykit-city-builder-bits`, `kaykit-dungeon-remastered`) and Quaternius
@@ -653,115 +904,45 @@ entry whose licence isn't CC0-1.0, a model whose `source.licence` differs from i
 gone is W115. Files without an entry (local `kiln import`) aren't checked; no `kiln.lock`, no checks. CREDITS.md and
 the manifest's `source` name the pack (`pack: kaykit-adventurers@1.0`) for locked files.
 
-## Styles
+## Build
 
-```toml
-# styles/sky_pirates.style.toml
-description = "Chunky toy airships, warm sunset light"
-extends = "soft_toy"           # soft_toy | low_poly | toon | clay | diorama | another project style
-notes = """Shapes, proportions, colours, materials, lighting in words (agents follow this)."""
+Building for the game: glb, Godot scenes, look kits, colour modes, the manifest, reporting.
 
-[shape]
-smooth = true                  # false = faceted (flat normals)
-sharp_angle = 50               # smooth styles: edges sharper than this stay crisp
-resolution = 0.008             # metres per mesh cell for a ~1 m model (finer = rounder, slower)
+### Building for the game
 
-[budgets]                      # triangles per class
-character = 8000
-default = 4000
+- `kiln build` writes `models/<name>.glb` (+ `<name>.<variant>.glb`, `<name>.lod1.glb`), and with "godot":
+  `models/<name>.tscn` (the glb with the style's materials: toon bands, outlines, rim light) and
+  `looks/<style>.tscn` (the look kit: sky, sun, tonemapper, SSAO, glow, grading). Tell the owner to instance the
+  look kit once in each scene: half of the style is lighting.
+- `kiln build --verify-godot` loads everything in headless Godot (in a throwaway copy) and checks parts, animations
+  and materials (and that attachments fitted to a CC0 character land on its bone).
+- Many team colours: `variant_glbs = false` in kiln.toml keeps one glb per model; each variant becomes a Godot scene
+  that recolours it (and a `swap` table in the manifest for other engines).
+- Crowds (many instances): `vertex_colors = true` puts colours in the vertices, one surface per material preset,
+  so a character costs 2-4 draw calls instead of one per colour.
+- Crowds, best: `atlas = true` gives every model one material (colours and presets in a small palette texture): 1 draw
+  call per mesh (2 with a decal), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
+  baked ambient occlusion (a number 0..1 sets its strength). Use it instead of `vertex_colors`.
+- Warnings W111 (a part lost to the triangle budget) and W112 (a LOD well over its target) mean: raise the budget.
+- Ground for a level: a model with `terrain:` instead of `parts:` (hills, ridges, plateaus, noise and paths combined in
+  order; up to 4 splat layers of palette colours by slope, height, nearness to paths and noise; see `kiln docs terrains`).
+  It builds chunked LOD glbs, a splat map and a Godot scene with a HeightMapShape3D; `kiln preview <name>`
+  shows it from above and four sides. Place things on it from Python with `kiln.terrain.load(project, name)`
+  (`height`, `normal`, `slope`, `splat` at any x, z).
+- Foliage and props over ground: a model with `scatter:` (`kiln docs scatters`) places other models (grass,
+  flowers, rocks, trees; one mesh each, small budgets) over a terrain, another model's top or a flat area by density,
+  spacing and rules (slope, height, noise patches, splat layers, paths), with random turn, scale, lean and tint. It
+  builds `<name>.scatter.json` and a Godot scene of MultiMeshes (with LODs and a fade-out distance); `kiln preview
+  <name>` shows it. Lint W118/W119: too many / no instances.
+- `kiln preview <name> --engine` renders through Godot itself (needs a display): use it to confirm the look.
+- `manifest.json` lists every model: glb, scene, size and bounds in metres, triangles, parts (pivot, parent, meta),
+  animations (Godot names, loop, fps), variants, LODs, licences. That's the contract with game code.
+- Not Godot: `export = ["glb"]`; the per-engine notes (Unity, Unreal, Bevy, three.js, Defold) are in KILN's
+  `docs/engines.md` (https://github.com/lukasgolino/KILN/blob/main/docs/engines.md). Outside Godot `atlas = true` is
+  usually the best colour mode; look kits, toon, outlines and rim light are Godot-only.
 
-[materials]                    # roughness, metallic (0..1), emission (glow strength), rim (soft edge light)
-plastic = { roughness = 0.42 }
 
-[look]                         # the Godot look kit and preview lighting
-shader = "standard"            # standard | toon
-toon_bands = 3
-toon_softness = 0.0            # toon: 0 = hard band steps; up to 1 = each edge blends over a whole band (0.2-0.4: soft cel)
-toon_shadow_color = ""         # toon: "" = shadows only darken; "#rrggbb" or a palette colour = the sun's missing light in
-                               # that colour (warm/cool shading; a light colour tints more; per model with its palette)
-toon_specular = 0.0            # toon: one hard highlight blob, strength 0..1 (size grows and strength fades with roughness)
-toon_shadows = "soft"          # toon: soft = Godot's received shadows; band = they drop into the darkest band (Godot only)
-outline = 0.0                  # metres (toon outlines), 0 = none; pixels with outline_space = "pixels" (e.g. 2)
-outline_color = "#1a1420"      # or "darken": each part's own colour, darkened
-outline_space = "metres"       # metres: a shell that thins with distance; pixels: constant thickness on screen
-tonemapper = "filmic"          # linear | filmic | aces | agx
-exposure = 1.0
-saturation = 1.15
-contrast = 1.0
-ssao = true
-glow = true
-ambient = 0.9
-sky_top = "#4f8fe0"
-sky_horizon = "#bcd7f2"
-ground = "#a9c48f"
-sun_pitch = -48.0              # degrees (negative = from above)
-sun_yaw = 30.0
-sun_energy = 1.1
-sun_color = "#fff6e8"
-shadows = true
-fog = 0.0
-fog_color = "#c8d8e8"
-rim_light = 0.0                # an added fresnel rim on every surface (Godot: a next pass; previews too): 0.5-1 reads on bright skies
-rim_light_color = "#ffffff"
-rim_light_power = 3.0          # higher: thinner rim
-```
-
-Every toon key is off by default (today's plain cel look). Wind Waker / Sable-style: `toon_softness = 0.2`,
-`toon_shadow_color` a cool mid tone, `toon_specular = 0.6` on glossy materials, `toon_shadows = "band"`,
-`outline_space = "pixels"` with `outline = 2` and `outline_color = "darken"`. Previews follow every key except
-`toon_shadows` (the software renderer has no cast shadows; `kiln preview --engine` shows them).
-
-## Lint
-
-Errors: E000 usage/config, E001 file/YAML, E002 unknown field, E003 bad value, E004 unknown colour, E005 unknown
-material, E006 style problem, E007 rig problem, E008 animation problem, E009 nothing to mesh, E010 import file
-problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id),
-E013 the built mesh has open edges (cracks), edges with more than two faces or sheets touching at a vertex (a KILN
-bug; report it), E014 `kiln.lock` problem (a pack-imported file changed, a licence that isn't CC0-1.0), E015 scatter problem
-(an unknown or unsuitable model to place or stand on, too many instances).
-
-Warnings: W101 part has no visible surface, W102 part thinner than the mesh resolution, W103 separate pieces,
-W104 colour not in the palette, W106 not standing on y = 0, W107 made under an older style_version, W108 size
-unusual for the class, W109 animated part without a pivot, W110 well over the triangle budget (patterns cost
-triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
-part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
-W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
-W114 (from `kiln build`) joints sit elsewhere than in the model's `animation_library`. W115 `kiln.lock` lists a file
-that isn't in the project. W116 a terrain's splat layer covers < 0.5% of the map, W117 a
-terrain's height shape is off the map. W118 a scatter entry places more than 50 000 instances, W119 one places none.
-Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`. Lint meshes models in parallel
-(`KILN_JOBS` processes, default: every core) and caches them for build and previews.
-
-## Commands
-
-`kiln init [dir] --style soft_toy` · `kiln new model <name> --template bean|prop|empty --class C` ·
-`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--effect [--at T,T,...]] [--engine] [--variant V]` ·
-`kiln lineup [models]` · `kiln gallery` · `kiln build [models] [--verify-godot]` (named models only: the others keep their last output) · `kiln status` ·
-`kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
-`kiln config show|get|set` · `kiln import <file> --licence L` (.glb/.gltf; .fbx/.blend/.obj with Blender 4.x) · `kiln pack list|add|search|import` · `kiln credits` · `kiln doctor` ·
-`kiln skill install` · `kiln mcp`. Every command takes `--json` (before or after the command). `--closeup` takes a part
-id (`root` = parts without one) or a part's number in the file (`--closeup 3`).
-`kiln preview <model> --vs <ref.glb|ref.gltf> [--ref-height METRES]`: the model against a reference mesh (a CC0
-pack item, kept as it is: its own colours and normals) at one scale (same pixels per metre, both on y = 0, centred
-on each other), in the style's lighting: `previews/<model>/vs_<ref>.png` with paired turntable rows (reference above
-the model; from below, eye level, above), the top fifth (head region) close up, and the silhouette difference per
-view, and both at gameplay distance (30 m and 60 m at a 60 degree vertical FOV on a 1080 px screen, the style's
-outline if it has one, upscaled nearest; an orthographic render at that scale). `--ref-height` scales the reference to that height (default: its own units). Metrics (printed, and in `--json`
-under `compare`): `iou` (mean silhouette IoU of 8 views: front, front-left, left, back-left at +10 degrees, front and
-left at +50, top, below at -30; 1.0 = same outline), `iou_min`, `iou_views`, `triangle_ratio` (model / reference),
-and for `model` and `reference`: `triangles`, `surfaces` (glTF primitives drawn = draw calls; for the model what
-`kiln build` writes), `materials`, `colors` (distinct base colours on faces; a textured reference counts each face's
-sampled colour), `facet_regularity` (share of surface area in triangles with an edge neighbour facing the same way
-within 2 degrees: flat designed facets near 1, smooth or noisily decimated surfaces near 0), `open_edges` (cracks),
-`size` (metres). For restyles (where proportions change on purpose):
-`band_iou` (mean of `band_ious`: silhouette IoU per body band in 4 side views at 0 degrees, each band cropped, scaled to
-one height and centred, so a big head on a short body still matches; `bands` = `humanoid` (`legs`/`torso`/`head` cut at
-the hips and head joints: a `skeleton: humanoid` model against a reference with `head` and `hips` nodes) or `thirds`
-(`bottom`/`middle`/`top`)), `mass` / `mass_ref` (visual mass: silhouette area / its bounding box, mean of the 8 views)
-and `mass_ratio` (model / reference), `screen_px` (height in pixels at 30 m and 60 m, model and reference). All
-deterministic. Without a path, `--vs` shows the style's inspiration images.
-
-## Build output
+### Build output
 
 `<output_dir>/models/<name>.glb` (+ `.<variant>.glb`, `.lod<N>.glb`), with "godot": `models/<name>.tscn` (glb +
 style materials) and `looks/<style>.tscn` (WorldEnvironment + Sun), `manifest.json`, `CREDITS.md` (imports).
@@ -772,7 +953,11 @@ in model space, rest pose, for hit zones), `animations` (gltf_name, fps, frames,
 `humanoid` (each joint's KayKit, Mixamo, Godot name), `godot_bonemap` (with godot_bonemap = true: the BoneMap file);
 parts also have `sockets`, animations a `start` (the parts their first frame moves, e.g. an arm built level but
 cocked when the animation starts). With `vertex_colors = true`, a game loading the .glb itself must set
-`vertex_color_use_as_albedo = true` on the imported materials (KILN's .tscn scenes do it); variants are then swap
+`vertex_color_use_as_albedo = true` on the imported materials (KILN's .tscn scenes do it), and on Godot's
+Compatibility renderer, which decodes vertex colours from sRGB once more (darker, more saturated;
+`vertex_color_is_srgb` changes nothing there), re-encode each mesh's colours once (`_encode_colours` in a KILN .tscn
+does it, as do scatter scenes for LOD glbs; it also covers `atlas_ao`'s occlusion; LOD glbs a game loads itself need
+it too); variants are then swap
 tables for the game (or `variant_glbs = true`). KILN's .tscn scripts share their materials between instances and
 leave any surface override the game set before `add_child` alone.
 
@@ -788,7 +973,7 @@ variant's textures (variant glbs are still written unless `variant_glbs = false`
 also `palette` (+ `glow`): to recolour at runtime, write other colours into a copy of the palette at the cells'
 pixels. `atlas_ao = true` bakes ambient occlusion from the model's distance field (imported models: from the mesh's
 dents) into COLOR_0 (a number sets its strength: the darkest corner is x (1 - strength); true = 0.65), a grey multiplier glTF viewers apply; in Godot only KILN's .tscn scenes use it
-(`vertex_color_use_as_albedo`). Previews don't show it. When the output is inside a Godot project (with "godot" or
+(`vertex_color_use_as_albedo`). Previews (`kiln preview`, `kiln gallery`, scatters) show it too. When the output is inside a Godot project (with "godot" or
 not), KILN writes the palette textures' `.import` settings (lossless, no mipmaps, no VRAM compression on first 3D use: 4x4 cells stay exact); settings Godot adds
 later (uid, imported files) are kept.
 
@@ -815,3 +1000,113 @@ add_child(pilot)
 pilot.get_node("AnimationPlayer").play("walk")
 add_child(load("res://assets/kiln/looks/soft_toy.tscn").instantiate())   # once per scene: the style's light
 ```
+
+
+### Reporting
+
+Keep reports short: what you made, the preview image paths, sizes/triangles if relevant, open questions with your
+recommended default. Log owner decisions in BRIEF.md (`log_feedback` over MCP).
+
+## Commands
+
+Every command and its flags.
+
+### Commands
+
+`kiln init [dir] --style soft_toy` · `kiln new model <name> --template bean|prop|empty --class C` ·
+`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--effect [--at T,T,...]] [--engine] [--variant V] [--views front,34,side,back] [--pitch 5,30] [--size PX]` ·
+`kiln lineup [models]` · `kiln gallery` · `kiln build [models] [--verify-godot]` (named models only: the others keep their last output) · `kiln status` ·
+`kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
+`kiln config show|get|set` · `kiln import <file> --licence L` (.glb/.gltf; .fbx/.blend/.obj with Blender 4.x) · `kiln pack list|add|search|import` · `kiln credits` · `kiln doctor` ·
+`kiln docs [topic...] [--search words]` (these docs: list, print one, find paragraphs) · `kiln skill install` · `kiln mcp`. Every command takes `--json` (before or after the command). `--closeup` takes a part
+id (`root` = parts without one) or a part's number in the file (`--closeup 3`).
+`kiln preview <model> --vs <ref.glb|ref.gltf> [--ref-height METRES]`: the model against a reference mesh (a CC0
+pack item, kept as it is: its own colours and normals) at one scale (same pixels per metre, both on y = 0, centred
+on each other), in the style's lighting: `previews/<model>/vs_<ref>.png` with paired turntable rows (reference above
+the model; from below, eye level, above), the top fifth (head region) close up, and the silhouette difference per
+view, and both at gameplay distance (30 m and 60 m at a 60 degree vertical FOV on a 1080 px screen, the style's
+outline if it has one, upscaled nearest; an orthographic render at that scale). `--ref-height` scales the reference to that height (default: its own units). Metrics (printed, and in `--json`
+under `compare`): `iou` (mean silhouette IoU of 8 views: front, front-left, left, back-left at +10 degrees, front and
+left at +50, top, below at -30; 1.0 = same outline), `iou_min`, `iou_views`, `triangle_ratio` (model / reference),
+and for `model` and `reference`: `triangles`, `surfaces` (glTF primitives drawn = draw calls; for the model what
+`kiln build` writes), `materials`, `colors` (distinct base colours on faces; a textured reference counts each face's
+sampled colour), `facet_regularity` (share of surface area in triangles with an edge neighbour facing the same way
+within 2 degrees: flat designed facets near 1, smooth or noisily decimated surfaces near 0), `open_edges` (cracks),
+`size` (metres). For restyles (where proportions change on purpose):
+`band_iou` (mean of `band_ious`: silhouette IoU per body band in 4 side views at 0 degrees, each band cropped, scaled to
+one height and centred, so a big head on a short body still matches; `bands` = `humanoid` (`legs`/`torso`/`head` cut at
+the hips and head joints: a `skeleton: humanoid` model against a reference with `head` and `hips` nodes) or `thirds`
+(`bottom`/`middle`/`top`)), `mass` / `mass_ref` (visual mass: silhouette area / its bounding box, mean of the 8 views)
+and `mass_ratio` (model / reference), `screen_px` (height in pixels at 30 m and 60 m, model and reference). All
+deterministic. Without a path, `--vs` shows the style's inspiration images.
+
+## Lint
+
+Lint rules: what each means and how to fix it.
+
+### Lint
+
+Errors: E000 usage/config, E001 file/YAML, E002 unknown field, E003 bad value, E004 unknown colour, E005 unknown
+material, E006 style problem, E007 rig problem, E008 animation problem, E009 nothing to mesh, E010 import file
+problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id),
+E013 the built mesh has open edges (cracks), edges with more than two faces or sheets touching at a vertex (a KILN
+bug; report it), E014 `kiln.lock` problem (a pack-imported file changed, a licence that isn't CC0-1.0), E015 scatter problem
+(an unknown or unsuitable model to place or stand on, too many instances).
+
+Warnings: W101 part has no visible surface, W102 part thinner than the mesh resolution, W103 separate pieces,
+W104 colour not in the palette, W106 not standing on y = 0, W107 made under an older style_version, W108 size
+unusual for the class, W109 animated part without a pivot, W110 well over the triangle budget (patterns cost
+triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
+part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
+W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
+W114 (from `kiln build`) joints sit elsewhere than in the model's `animation_library`. W115 `kiln.lock` lists a file
+that isn't in the project. W116 a terrain's splat layer covers < 0.5% of the map, W117 a
+terrain's height shape is off the map. W118 a scatter entry places more than 50 000 instances, W119 one places none.
+W120 the grid cap (`max_cells`), not the resolution, set the mesh cell size: raise `max_cells` to what it says. W121 a `detail` part shows nowhere (no `normal_map`, or under two texels thick). W122 a
+`blend_to` target is meshed apart from the part (hard, kept, separate, another bone's piece): they join crisply.
+W123 the built mesh dips 2 mm (or a tenth of a cell) or more below y = 0 (blends push feet under the ground): `origin: ground` exports it
+lifted onto y = 0. W124 a part shows only a sliver: 97% or more of its own surface is deeper inside other parts than
+their blend (clipped flat, nearly gone; W101 is all of it), with the covering parts named; not for hard, shell or
+separate parts. Partly floating details have no warning yet: check them in the previews.
+Disable in `kiln.toml` `[lint] disable` or per model `lint: { disable: [...] }`. Lint meshes models in parallel
+(`KILN_JOBS` processes, default: every core) and caches them for build and previews. `pip install "kiln-gen[fast]"`
+(numba) evaluates the shapes compiled, 2-3x faster on big models; the output then differs from the plain install in
+the last digits, so a game pins one or the other.
+
+## Api
+
+Generator scripts with kiln.api.
+
+### Generator scripts (`kiln.api`)
+
+For walls with merlons, fences, stairs, rings of pillars, forests of trees, crowds: write a short Python script
+with `kiln.api` (`part`, `crenellated_wall`, `fence`, `stairs`, `tower`, `tree`, `ring`, `offset`, `model`,
+`write_model`), run it, and treat the resulting `.kiln.yaml` like any other model (lint, preview). Keep the script
+next to the models (`models/<name>.py`) so it can be re-run.
+
+## Report
+
+Reporting what got in your way (GitHub issues).
+
+### Help us improve KILN: report what got in your way
+
+KILN is young, and it gets better mostly through reports from agents like you using it on real games. When
+something gets in your way, please tell us in a GitHub issue at https://github.com/lukasgolino/KILN/issues. It
+is the most useful thing you can do for the project. Whether you do is entirely up to you and your user.
+
+Worth reporting: a crash or traceback; a wrong or misleading message or lint rule; output that looks or behaves
+wrong; a workaround you had to invent; a feature you needed and didn't have; this skill or the reference
+misleading you.
+
+1. Note it as you go; don't interrupt the task for it.
+2. At a natural break (the end of the task, your report), draft the issue: a one-line title; `kiln --version`;
+   what you did (commands, a minimal source snippet); what you expected and what you got; the workaround, if
+   any. End the body with "Reported by an agent using KILN." Keep it to a minimal repro: no game names, private
+   asset content, paths or anything else from the user's project unless they OK it.
+3. Look for an existing issue first: `gh issue list --repo lukasgolino/KILN --search "<keywords>"`; if one
+   fits, offer a comment on it instead.
+4. Show the user the draft and ask whether to file it. Issues are public and posted under their GitHub account,
+   so **never file without their OK**. If they agree:
+   `gh issue create --repo lukasgolino/KILN --title "..." --body-file <draft>`, or give them the link
+   https://github.com/lukasgolino/KILN/issues/new?template=agent-report.md to file it themselves. If they
+   decline, drop it.
