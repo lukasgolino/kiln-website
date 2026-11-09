@@ -5,6 +5,13 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-09
+
+### Added
+
+- Footer link to the privacy notice at lukasgolino.com/privacy.html, which covers the analytics and hosting of all our
+  sites ([lukasgolino.github.io#16](https://github.com/lukasgolino/lukasgolino.github.io/issues/16)).
+
 ## [0.3.0] - 2026-11-09
 
 ### Added
@@ -44,7 +51,8 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/lukasgolino/kiln-website/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/lukasgolino/kiln-website/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/lukasgolino/kiln-website/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lukasgolino/kiln-website/releases/tag/v0.1.0
