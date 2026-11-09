@@ -6,6 +6,78 @@ before 1.0).
 
 ## [Unreleased]
 
+### Changed
+
+- The vendored PAGAN pieces are Apache 2.0 like the rest of KILN (same author); the separate MIT file is gone.
+
+## [0.21.0] - 2026-11-09
+
+### Changed
+
+- Licensed under the Apache License 2.0 instead of MIT (#225). Releases up to 0.20.0 stay
+  available under MIT.
+- `kiln preview --pose` (#189, #201): `--views`, `--pitch` and `--size` pick its views and tile size (they no longer also
+  write a views sheet), `--frame N[,N...]` shows chosen frames (one up close), and the default rows are 3/4 front and
+  both sides (a limb on -X showed in no side frame); `--pitch` alone tilts those; `--variant` now colours the pose
+  sheet too (`pose_<anim>.<variant>.png`). Pose tiles stay 200 px unless `--size` is given. The MCP `preview` tool
+  takes `frames` and `size`.
+
+### Fixed
+
+- W109 no longer fires for animated joints of a `skeleton: humanoid` model: the skeleton puts their pivots at the
+  joints (#187).
+
+## [0.20.0] - 2026-11-09
+
+Textures tiled over whole parts, Godot renders that match the previews (and run offscreen), hard-part mirror and CSG
+fixes, faster builds. Meshes change for models with hard parts wholly inside others and for every relaxed mesh (to
+float rounding); look kits and previews change (colour parity); the rest is byte-identical apart from the generator
+string.
+
+### Added
+
+- `texture: { image, project: box | cylindrical, size | texel, at, axis }` on a part (#184, #198): an image tiled over
+  the whole part. Box: every face from the side it faces; cylindrical: wrapped round an axis by arc length, caps flat,
+  vertices split along the seam. Exported with a repeating sampler (nearest for <= 256 px: pixel-art textures on
+  smooth shapes), previewed the same; a decal on the part paints over it.
+
+### Performance
+
+- Relaxing after decimation re-tests only the faces next to a vertex that moved (#199): the same meshes (to float
+  rounding; the demo is byte-identical), the pass ~3x faster.
+- Hard-part detail levels that change nothing are skipped (#207). (Uniting hard parts pairwise, briefly in main,
+  is reverted: on an 82-part scene it left 217 non-manifold edges where coplanar faces meet, #214.)
+
+### Fixed
+
+- Hard parts (#170): `mirror` on a hard part kept nothing (intersecting a solid with a half-space that wholly contains
+  it returned no polygons), and a mirrored cut on a hard solid failed with numpy's "zero-size array ...". Union and subtract had the same early exit: a hard
+  part wholly inside another kept its inner faces, a cut wholly inside one lost its cavity. A build error
+  raised inside a library is now reported as an internal KILN error to report, with where it came from, not as numpy's
+  message.
+
+### Changed
+
+- The repository is now `lukasgolino/kiln` (#158): move git pins and links to the new name (GitHub redirects the old
+  URLs for now).
+- The Godot render matches `kiln preview` (#161; mean OKLab gap 0.25 -> 0.02 on a palette x material grid, soft_toy):
+  - look kits set `tonemap_white = 3`, so Godot's Filmic is exactly the previews' curve (Godot's default white made
+    every colour paler);
+  - on the Compatibility renderer the look kit's sun casts no shadows: Godot adds the ambient light again for each
+    shadowed light there (godotengine/godot#90259), which made models several times too bright (`[look]
+    compat_shadows = true` keeps them);
+  - the preview's sky ambient is `ambient` as Godot applies it (it was scaled by 0.55): previews are a little brighter.
+  Every look kit and every preview image changes. The toon look still differs (#183).
+- `kiln preview --engine` takes `--views`, `--pitch` and `--size`, is framed exactly like the software views and sits on
+  their tile colour (the look kit still lights it; its sky is no longer the backdrop), in the same sheet layout (#162).
+  Default: four sides at 15 and 50 degrees. With `--engine`, those flags pick the engine's views.
+- `kiln preview --engine` renders offscreen (#160): on Linux a private Xvfb display with Mesa's CPU drivers, the
+  desktop's DISPLAY and WAYLAND_DISPLAY removed; without Xvfb it refuses instead of opening a window. `KILN_OFFSCREEN`
+  sets a wrapper command (or `window` to opt in to the current display). `kiln doctor` reports how engine renders run
+  (`offscreen` in `--json`) instead of whether a desktop display exists.
+- `kiln init` inside a Godot project sets `output_dir` to the project's `assets/kiln` (relative) and `export = ["glb",
+  "godot"]`, instead of keeping `build` under its own `.gdignore` and only saying so (#163).
+
 ## [0.19.0] - 2026-11-09
 
 KILN is on PyPI as `kiln-gen` and in the MCP Registry as `io.github.lukasgolino/kiln` (#155). Output is
@@ -644,7 +716,9 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/kiln/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/lukasgolino/kiln/compare/v0.20.0...v0.21.0
+[0.20.0]: https://github.com/lukasgolino/kiln/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/lukasgolino/kiln/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/lukasgolino/kiln/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/lukasgolino/kiln/compare/v0.16.1...v0.17.0

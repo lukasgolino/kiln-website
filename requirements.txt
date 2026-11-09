@@ -1,2 +1,2 @@
 # The KILN release the site art is built with. Bump the version, rerun tools/build_site_assets.py, commit.
-kiln-gen==0.19.0
+kiln-gen==0.21.0

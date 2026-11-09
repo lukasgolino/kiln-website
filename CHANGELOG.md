@@ -5,6 +5,12 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-09
+
+### Changed
+
+- Pins KILN 0.21.0; assets rebuilt with it.
+
 ## [0.4.1] - 2026-11-09
 
 ### Changed
