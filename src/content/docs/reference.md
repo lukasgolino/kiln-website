@@ -9,9 +9,8 @@ Start of every session, a new project, kiln.toml and the project layout.
 ### Start of every session
 
 1. `kiln status` (or MCP `status`): what exists, what needs review. No `kiln.toml`? `kiln init <dir> --style <preset>`
-   (inside a Godot project it writes `.gdignore` in the KILN folder, so Godot skips the sources and everything else under it,
-   the default `output_dir = "build"` included: point `output_dir` at a folder Godot sees, e.g. `../assets/kiln`; `kiln build`
-   with Godot export refuses an ignored one).
+   (inside a Godot project it writes `.gdignore` in the KILN folder, so Godot skips the sources, and sets `output_dir` to the
+   Godot project's `assets/kiln` with `export = ["glb", "godot"]`; `kiln build` with Godot export refuses an output Godot ignores).
 2. Read `BRIEF.md` (what the game needs, decisions) and `STYLE.md` (how it looks). They are the project's memory.
 3. `kiln style show`: the style's notes (shape language, proportions) and numbers. Follow them.
 
@@ -32,7 +31,7 @@ kiln.toml            settings (kiln config show)
 palettes/main.pal.yaml   colours (PAGAN format): models use their names
 models/<name>.kiln.yaml  one model per file (name = file name)
 styles/<name>.style.toml own styles; styles/<name>/inspiration/*.png|jpg reference images
-decals/  imports/        images for decals; imported .glb/.gltf files
+decals/  imports/        images for decals and textures (or a textures/ folder: paths are relative to the project); imported .glb/.gltf files
 BRIEF.md  STYLE.md       what the game needs; how it looks (+ changelog)
 ```
 
@@ -49,7 +48,7 @@ variant_glbs = true            # false: no .glb per variant; Godot gets <name>.<
 merge_rigid = false            # true: a rigid skin is one skinned mesh (one draw call; every vertex 100% on its part's bone;
                                #   separate parts stay nodes; hide a part by scaling its bone to 0); manifest merged_rigid
 vertex_colors = false          # true: colours in the vertices, one surface per material preset (fewer draw calls)
-atlas = false                  # true: one material per model from small palette textures (1 surface, 2 with decals)
+atlas = false                  # true: one material per model from small palette textures (1 surface, +1 per decal or texture)
 atlas_ao = false               # true or a strength 0..1 (with atlas): ambient occlusion baked into the vertex colours
 godot_bonemap = false          # true: humanoids get models/<name>.bonemap.tres in their glb's .import; Godot RENAMES
                                #   their bones to SkeletonProfileHumanoid's (see Humanoids)
@@ -227,6 +226,7 @@ model (decal `at`, rig pivots, poses' offsets) is in model space.
 | `pattern: {...}` | a second colour painted on the part (below) |
 | `gradient: { to: fur_light, steps: 3 }` | the part's colour going to `to` in `steps` bands (2-16, default 3), mixed in OKLab; `from:` replaces the part's colour at the start. `along: path` (the default for tube, capsule and lock: first point to last) or `x`/`y`/`z` (the default for other shapes: across the shape's own box, low to high). Patterns paint over it; variants recolour the mixed bands from the swapped ends |
 | `decal: {...}` | an image on the part (below) |
+| `texture: {...}` | an image tiled over the whole part, box or cylindrical projection, crisp when small (below) |
 | `loose: true` | this part may float free (flames, bees, sparks, rubble): W103 doesn't count it |
 | `blend: none` | a hard part, joined crisply (below) |
 | `hard: true` / `false` | make this part hard (exact polygons) or smooth, whatever the style says |
@@ -303,6 +303,21 @@ Projects an image (PNG with transparency, e.g. made with PAGAN) onto the faces o
 (x, -x, y, -y, z, -z), centred at `at` (model space, on or near the surface), `size` = width, height in metres. It
 shows on that side only (a flag needs a second decal with `axis: -z` for its back). Transparent pixels show the part's colour.
 Small images (<= 256 px) are sampled crisp (pixel art).
+
+#### Textures
+
+```yaml
+    texture: { image: textures/brushed.png, project: box, texel: 0.004 }                       # every face, from the side it faces
+    texture: { image: textures/trim.png, project: cylindrical, at: [0, 0, 0], axis: y, size: [0.1, 0.05] }
+```
+
+Tiles an image over the whole part (a shirt print, pixel-art metal, a trim band), as one material. `box`: each face
+takes it from the side it faces (its main normal direction, no blending), upright seen from there. `cylindrical`:
+round `axis` through `at` (u = arc length: texels keep their size), caps taken flat; seam at -z for `axis: y`, -y
+for x, -x for z (it shows unless the circumference is whole tiles). `at`: the part's centre by default. Cylindrical
+can't follow `mirror`/`array` copies: use `mirror_id` or `box`. Tile: `size: [w, h]` metres or `texel:` metres per
+pixel. It repeats; images <= 256 px are crisp (pixel art on smooth shapes). Clear pixels show the part's colour
+(after swaps); its pattern colours paint over it; a `decal` replaces it there.
 
 ## Templates
 
@@ -412,6 +427,8 @@ sun_yaw = 30.0
 sun_energy = 1.1
 sun_color = "#fff6e8"
 shadows = true
+compat_shadows = false         # Godot's Compatibility renderer: the sun drops its shadows there, since that renderer adds the
+                               # ambient again per shadowed light (godotengine/godot#90259: several times too bright); true keeps them
 fog = 0.0
 fog_color = "#c8d8e8"
 rim_light = 0.0                # an added fresnel rim on every surface (Godot: a next pass; previews too): 0.5-1 reads on bright skies
@@ -422,7 +439,8 @@ rim_light_power = 3.0          # higher: thinner rim
 Every toon key is off by default (today's plain cel look). Wind Waker / Sable-style: `toon_softness = 0.2`,
 `toon_shadow_color` a cool mid tone, `toon_specular = 0.6` on glossy materials, `toon_shadows = "band"`,
 `outline_space = "pixels"` with `outline = 2` and `outline_color = "darken"`. Previews follow every key except
-`toon_shadows` (the software renderer has no cast shadows; `kiln preview --engine` shows them).
+`toon_shadows` (the software renderer has no cast shadows; `kiln preview --engine` shows them in Forward+ and Mobile
+projects, and on Compatibility only with `compat_shadows = true`).
 
 ## Rigs
 
@@ -435,7 +453,7 @@ Characters, rigs, skins and sockets; rig notation.
   Hats, helmets, hair: separate shapes on top, crisp seams. Heads on caricatures: an ellipsoid blended into the
   body with a big nose ellipsoid blended in. Keep hands simple (a sphere or mitten).
 - **Rig** what moves: give it an `id`, then `rig: { id: { pivot: [joint], parent: id } }`. Pivots are the joint
-  positions (hip, shoulder, hinge, axle). Without a pivot a part turns about its box centre (W109).
+  positions (hip, shoulder, hinge, axle). Without a pivot a part turns about its box centre (W109); `skeleton: humanoid` joints get theirs at the joint.
 - **Skin:** `rigid` (each part moves as one piece: robots, machines, props, toys) or `soft` (one mesh that bends
   where parts blend: creatures, bean characters). `separate: true` keeps a part rigid inside a soft skin
   (detachable helmet). Rigid joints that turn far (ragdolls): `union: per_bone`, so no turn opens the mesh.
@@ -447,7 +465,8 @@ Characters, rigs, skins and sockets; rig notation.
   `skeleton: { map: { <part id>: <clip joint>, ... }, root_motion: <clip joint> }` (`kiln docs humanoids`, "Clips on any skeleton").
 - **Cloth and flags:** split them into 3-4 segments along their length, each its own id parented to the previous one
   (pivots on the seams), crisp seams (`blend: 0`), `skin: soft`, and animate with `cycle: { type: chain, parts: [...] }`. Check every animation with
-  `kiln preview <name> --pose <animation>`: the filmstrip shows each frame from the front and the side.
+  `kiln preview <name> --pose <animation>`: the filmstrip shows each frame from 3/4 front and both sides; `--views`,
+  `--pitch` and `--size` pick the views and tile size, `--frame 3` (or `0,4`, for every `--pose`) one frame up close.
 - Gameplay data on parts: `rig: { helmet: { meta: { hitzone: head, detachable: true, socket: [0, 1.6, 0.1] } } }` ->
   node metadata in Godot and in the manifest, which also gives every part's box (`aabb`) for hit zones.
 - Detachables (`separate: true`) are meshed on their own, so they may overlap the body and leave no hole when removed.
@@ -921,7 +940,7 @@ Building for the game: glb, Godot scenes, look kits, colour modes, the manifest,
 - Crowds (many instances): `vertex_colors = true` puts colours in the vertices, one surface per material preset,
   so a character costs 2-4 draw calls instead of one per colour.
 - Crowds, best: `atlas = true` gives every model one material (colours and presets in a small palette texture): 1 draw
-  call per mesh (2 with a decal), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
+  call per mesh (+1 per decal or texture), and team colours become a texture swap on one shared mesh. `atlas_ao = true` adds
   baked ambient occlusion (a number 0..1 sets its strength). Use it instead of `vertex_colors`.
 - Warnings W111 (a part lost to the triangle budget) and W112 (a LOD well over its target) mean: raise the budget.
 - Ground for a level: a model with `terrain:` instead of `parts:` (hills, ridges, plateaus, noise and paths combined in
@@ -934,11 +953,11 @@ Building for the game: glb, Godot scenes, look kits, colour modes, the manifest,
   spacing and rules (slope, height, noise patches, splat layers, paths), with random turn, scale, lean and tint. It
   builds `<name>.scatter.json` and a Godot scene of MultiMeshes (with LODs and a fade-out distance); `kiln preview
   <name>` shows it. Lint W118/W119: too many / no instances.
-- `kiln preview <name> --engine` renders through Godot itself (needs a display): use it to confirm the look.
+- `kiln preview <name> --engine` renders through Godot itself, offscreen (Linux: a private Xvfb with CPU drivers; never a window on the desktop; `KILN_OFFSCREEN` overrides): use it to confirm the look. It is framed like the software views on the same tile colour; with `--engine`, `--views`, `--pitch` and `--size` pick its views (default: four sides at 15 and 50 degrees).
 - `manifest.json` lists every model: glb, scene, size and bounds in metres, triangles, parts (pivot, parent, meta),
   animations (Godot names, loop, fps), variants, LODs, licences. That's the contract with game code.
 - Not Godot: `export = ["glb"]`; the per-engine notes (Unity, Unreal, Bevy, three.js, Defold) are in KILN's
-  `docs/engines.md` (https://github.com/lukasgolino/KILN/blob/main/docs/engines.md). Outside Godot `atlas = true` is
+  `docs/engines.md` (https://github.com/lukasgolino/kiln/blob/main/docs/engines.md). Outside Godot `atlas = true` is
   usually the best colour mode; look kits, toon, outlines and rim light are Godot-only.
 
 
@@ -990,7 +1009,7 @@ BoneAttachment3D and must land where they were made.
 
 Other engines: everything but the `.tscn` files, `.import` sidecars and `<name>.rim.png` is plain glTF + JSON. Notes per
 engine (axes, scale, vertex colours, palette texture filtering, skins, clips, LODs, approximating the look):
-https://github.com/lukasgolino/KILN/blob/main/docs/engines.md
+https://github.com/lukasgolino/kiln/blob/main/docs/engines.md
 
 In Godot:
 
@@ -1014,7 +1033,7 @@ Every command and its flags.
 ### Commands
 
 `kiln init [dir] --style soft_toy` · `kiln new model <name> --template bean|prop|empty --class C` ·
-`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM] [--vs] [--detach] [--fit] [--effect [--at T,T,...]] [--engine] [--variant V] [--views front,34,side,back] [--pitch 5,30] [--size PX]` ·
+`kiln lint [models]` · `kiln preview <model> [--closeup ID|NUMBER] [--pose ANIM [--frame N,N]] [--vs] [--detach] [--fit] [--effect [--at T,T,...]] [--engine] [--variant V] [--views front,34,side,back] [--pitch 5,30] [--size PX]` ·
 `kiln lineup [models]` · `kiln gallery` · `kiln build [models] [--verify-godot]` (named models only: the others keep their last output) · `kiln status` ·
 `kiln mark <models> --approved|--draft [--current]` · `kiln style list|show|new|bump` ·
 `kiln config show|get|set` · `kiln import <file> --licence L` (.glb/.gltf; .fbx/.blend/.obj with Blender 4.x) · `kiln pack list|add|search|import` · `kiln credits` · `kiln doctor` ·
@@ -1048,14 +1067,14 @@ Lint rules: what each means and how to fix it.
 
 Errors: E000 usage/config, E001 file/YAML, E002 unknown field, E003 bad value, E004 unknown colour, E005 unknown
 material, E006 style problem, E007 rig problem, E008 animation problem, E009 nothing to mesh, E010 import file
-problem, E011 decal image missing, E012 extends problem (no such model, not a template, a loop, unknown remove id),
+problem, E011 decal or texture image missing or unreadable, E012 extends problem (no such model, not a template, a loop, unknown remove id),
 E013 the built mesh has open edges (cracks), edges with more than two faces or sheets touching at a vertex (a KILN
 bug; report it), E014 `kiln.lock` problem (a pack-imported file changed, a licence that isn't CC0-1.0), E015 scatter problem
 (an unknown or unsuitable model to place or stand on, too many instances).
 
 Warnings: W101 part has no visible surface, W102 part thinner than the mesh resolution, W103 separate pieces,
 W104 colour not in the palette, W106 not standing on y = 0, W107 made under an older style_version, W108 size
-unusual for the class, W109 animated part without a pivot, W110 well over the triangle budget (patterns cost
+unusual for the class, W109 animated part without a pivot (not humanoid joints), W110 well over the triangle budget (patterns cost
 triangles: every stripe border is cut into the mesh; prefer few, large patterns, or model details as parts), W111 a
 part lost when reducing to the triangle budget (raise `budget:`), W112 a LOD well above its target (from `kiln build`),
 W113 a part pokes through a shell (eyes bigger than a visor slot, a head through a helmet: keep it inside or outside).
@@ -1091,7 +1110,7 @@ Reporting what got in your way (GitHub issues).
 ### Help us improve KILN: report what got in your way
 
 KILN is young, and it gets better mostly through reports from agents like you using it on real games. When
-something gets in your way, please tell us in a GitHub issue at https://github.com/lukasgolino/KILN/issues. It
+something gets in your way, please tell us in a GitHub issue at https://github.com/lukasgolino/kiln/issues. It
 is the most useful thing you can do for the project. Whether you do is entirely up to you and your user.
 
 Worth reporting: a crash or traceback; a wrong or misleading message or lint rule; output that looks or behaves
@@ -1103,10 +1122,10 @@ misleading you.
    what you did (commands, a minimal source snippet); what you expected and what you got; the workaround, if
    any. End the body with "Reported by an agent using KILN." Keep it to a minimal repro: no game names, private
    asset content, paths or anything else from the user's project unless they OK it.
-3. Look for an existing issue first: `gh issue list --repo lukasgolino/KILN --search "<keywords>"`; if one
+3. Look for an existing issue first: `gh issue list --repo lukasgolino/kiln --search "<keywords>"`; if one
    fits, offer a comment on it instead.
 4. Show the user the draft and ask whether to file it. Issues are public and posted under their GitHub account,
    so **never file without their OK**. If they agree:
-   `gh issue create --repo lukasgolino/KILN --title "..." --body-file <draft>`, or give them the link
-   https://github.com/lukasgolino/KILN/issues/new?template=agent-report.md to file it themselves. If they
+   `gh issue create --repo lukasgolino/kiln --title "..." --body-file <draft>`, or give them the link
+   https://github.com/lukasgolino/kiln/issues/new?template=agent-report.md to file it themselves. If they
    decline, drop it.
