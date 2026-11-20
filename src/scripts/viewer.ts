@@ -79,8 +79,12 @@ function load(url: string) {
   return cache.get(url)!;
 }
 
-/** Frees a loaded model's GPU memory and forgets it (the browser's HTTP cache still has the file). */
+const shown = new Map<string, number>(); // url -> the viewers showing it now
+
+/** Frees a loaded model's GPU memory and forgets it (the browser's HTTP cache still has the file), unless another
+ * viewer on the page is showing it. */
 function unload(url: string) {
+  if (shown.get(url)) return;
   const loaded = cache.get(url);
   cache.delete(url);
   loaded
@@ -190,8 +194,12 @@ export class Viewer {
     this.host.dataset.state = "ready";
     if (this.model) this.scene.remove(this.model);
     this.mixer?.stopAllAction();
-    if (this.options.single && this.url && this.url !== url) unload(this.url);
-    this.url = url;
+    if (this.url !== url) {
+      if (this.url) shown.set(this.url, (shown.get(this.url) ?? 1) - 1);
+      shown.set(url, (shown.get(url) ?? 0) + 1);
+      if (this.options.single && this.url) unload(this.url);
+      this.url = url;
+    }
     const model = clone(gltf.scene);
     this.model = model;
     this.scene.add(model);

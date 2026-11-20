@@ -5,6 +5,13 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-20
+
+### Changed
+
+- The page opens on the deep-sea diver, a showpiece, instead of the bean pilot: its still shows until the model is
+  there, with a stretch of its source underneath.
+
 ## [0.5.0] - 2026-11-20
 
 ### Added
@@ -91,7 +98,8 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/lukasgolino/kiln-website/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/lukasgolino/kiln-website/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/lukasgolino/kiln-website/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/lukasgolino/kiln-website/compare/v0.4.0...v0.4.1

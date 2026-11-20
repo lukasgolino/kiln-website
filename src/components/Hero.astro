@@ -1,10 +1,13 @@
 ---
-import { looks, site, source } from "../lib/data";
+import { asset, heroSource, site } from "../lib/data";
 import { highlightSource } from "../scripts/highlight";
 
-const text = source("pilot");
-const lines = text.split("\n").length;
-const pilot = site().models.pilot;
+// the page opens on a showpiece: the deep-sea diver
+const NAME = "diver";
+const heroes = site().heroes;
+const model = heroes.models[NAME];
+const { excerpt, from, lines } = heroSource(model.project, NAME, 40);
+const shown = excerpt.split("\n").length;
 ---
 
 <section class="hero">
@@ -33,16 +36,17 @@ const pilot = site().models.pilot;
       </p>
     </div>
     <figure class="show panel">
-      <div class="stage" id="hero-stage" data-looks={JSON.stringify(looks())} role="img" aria-label="A bean pilot, a real KILN .glb, waddling. Drag to turn it.">
+      <div class="stage" id="hero-stage" data-name={NAME} data-look={JSON.stringify(heroes.looks[model.project])} role="img" aria-label="A deep-sea diver in a riveted copper helmet, a real KILN .glb, breathing out bubbles. Drag to turn it.">
+        <img class="poster" src={asset(`img/heroes/${NAME}.png`)} width="320" height="320" alt="" />
         <span class="hint">drag to turn</span>
         <button class="play" type="button" aria-label="Pause">❚❚</button>
       </div>
       <div class="chips" id="hero-anims" aria-label="Animations"></div>
       <figcaption>
-        <span>{pilot.triangles.soft_toy.toLocaleString("en")} triangles, rigged, {Object.keys(pilot.animations).length} animations, from this {lines}-line file</span>
-        <code>models/pilot.kiln.yaml</code>
+        <span>{model.triangles.toLocaleString("en")} triangles, rigged, {Object.keys(model.animations).length} animations, from this {lines.toLocaleString("en")}-line file (lines {from} to {from + shown - 1} shown)</span>
+        <code>models/{NAME}.kiln.yaml</code>
       </figcaption>
-      <pre class="code src" tabindex="0" aria-label="The pilot's KILN source"><code set:html={highlightSource(text)} /></pre>
+      <pre class="code src" tabindex="0" aria-label="A stretch of the diver's KILN source"><code set:html={highlightSource(excerpt)} /></pre>
     </figure>
   </div>
 </section>
@@ -52,11 +56,10 @@ const pilot = site().models.pilot;
   import { animChips, playButton } from "../scripts/ui";
 
   const stage = document.getElementById("hero-stage")!;
-  const looks = JSON.parse(stage.dataset.looks!);
   const viewer = new Viewer(stage);
   animChips(viewer, document.getElementById("hero-anims")!);
   playButton(viewer, stage.querySelector(".play")!);
-  viewer.show(`${base()}models/soft_toy/pilot.glb`, looks.soft_toy, "walk");
+  viewer.show(`${base()}models/heroes/${stage.dataset.name}.glb`, JSON.parse(stage.dataset.look!), "idle");
 </script>
 
 <style>
@@ -107,6 +110,18 @@ const pilot = site().models.pilot;
   }
   .stage {
     aspect-ratio: 4 / 3;
+  }
+  /* the still stands in until the model is there */
+  .poster {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    height: 78%;
+    width: auto;
+    pointer-events: none;
+  }
+  .stage[data-state="ready"] .poster {
+    display: none;
   }
   .chips {
     margin-top: 10px;
