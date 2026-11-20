@@ -348,7 +348,8 @@ for f in range(FRAMES):
 animations = {
     "idle": {"fps": 8, "cycle": {"type": "idle", "frames": FRAMES, "look": 0, "nod": 0, "breathe": 0.02, "sway": 2, "arm_sway": 4, "elbow": 10}, "poses": swing},
     "wave": {"fps": 10, "cycle": {"type": "wave", "frames": 12, "raise": 72, "bend": 85, "angle": 24},
-             "poses": [r4({"lamp": {"rotate": [4 * math.sin(2 * math.pi * f / 12), 0, 0]}, **bubbles(f, 12)}) for f in range(12)]},  # fmt: skip
+             # the cycle lifts the arm in the front plane, which leaves the palm edge-on: the hand turns to face forward
+             "poses": [r4({"hand_r": {"rotate": [0, -90, 0]}, "lamp": {"rotate": [4 * math.sin(2 * math.pi * f / 12), 0, 0]}, **bubbles(f, 12)}) for f in range(12)]},  # fmt: skip
 }
 
 data = model(
