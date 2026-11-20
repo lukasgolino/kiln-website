@@ -1,0 +1,153 @@
+---
+import { asset, heroSource, site } from "../lib/data";
+import { highlightSource } from "../scripts/highlight";
+
+const data = site().heroes;
+const order: string[] = data.order;
+const models = order.map((name) => ({ name, ...data.models[name] }));
+const sources = Object.fromEntries(
+  models.map((m) => {
+    const { head, lines } = heroSource(m.project, m.name);
+    return [m.name, { html: highlightSource(head), more: lines - head.split("\n").length }];
+  }),
+);
+const total = models.reduce((sum, m) => sum + m.triangles, 0);
+---
+
+<section id="showpieces">
+  <div class="wrap">
+    <span class="eyebrow">Showpieces</span>
+    <h2>Detail when you want it.</h2>
+    <p class="lede">
+      The same notation scales from a 5,000-triangle toy to a hero asset: exact hard surfaces with rivets, bevels
+      and extruded lettering; scale and feather coats as relief with baked colour and normal maps; rigs, soft skins
+      and animations. These {models.length} are the .glb files KILN built ({total.toLocaleString("en")} triangles
+      between them) from text and nothing else: no sculpting, no image generator, no Blender.
+    </p>
+    <figure class="panel show">
+      <div class="stage" id="show-stage" data-looks={JSON.stringify(data.looks)} data-models={JSON.stringify(Object.fromEntries(models.map((m) => [m.name, m])))} data-sources={JSON.stringify(sources)} role="img" aria-label="The selected showpiece model. Drag to turn it.">
+        <span class="hint">drag to turn</span>
+        <button class="play" type="button" aria-label="Pause">❚❚</button>
+      </div>
+      <ul class="thumbs" id="show-pick">
+        {
+          models.map((m, i) => (
+            <li>
+              <button type="button" data-value={m.name} aria-pressed={i === 0}>
+                <img src={asset(`img/heroes/${m.name}.png`)} width="160" height="160" alt="" loading="lazy" />
+                <span>{m.name}</span>
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="chips" id="show-anims" aria-label="Animations"></div>
+      <figcaption id="show-caption"></figcaption>
+      <details>
+        <summary>How it starts: <code id="show-file"></code></summary>
+        <pre class="code src" tabindex="0"><code id="show-source" /></pre>
+        <p class="more" id="show-more"></p>
+      </details>
+    </figure>
+  </div>
+</section>
+
+<script>
+  import { Viewer, base } from "../scripts/viewer";
+  import { animChips, chipGroup, playButton } from "../scripts/ui";
+
+  const stage = document.getElementById("show-stage")!;
+  const looks = JSON.parse(stage.dataset.looks!);
+  const models = JSON.parse(stage.dataset.models!);
+  const sources = JSON.parse(stage.dataset.sources!);
+  const caption = document.getElementById("show-caption")!;
+  const code = document.getElementById("show-source")!;
+  const file = document.getElementById("show-file")!;
+  const more = document.getElementById("show-more")!;
+  const viewer = new Viewer(stage, true);
+  animChips(viewer, document.getElementById("show-anims")!);
+  playButton(viewer, stage.querySelector(".play")!);
+  const show = (name: string) => {
+    const m = models[name];
+    viewer.show(`${base()}models/heroes/${name}.glb`, looks[m.project]);
+    const anims = Object.keys(m.animations).length;
+    const maps = m.maps.length ? " with its baked colour and normal maps" : "";
+    caption.textContent = `${name}: ${m.description}. ${m.height} m tall, ${m.triangles.toLocaleString("en")} triangles, ${m.parts} bones${anims ? `, ${anims} animation${anims > 1 ? "s" : ""}` : ""}, ${(m.bytes / 1e6).toFixed(1)} MB .glb${maps}, from ${m.source_lines.toLocaleString("en")} lines of KILN.`;
+    file.textContent = `models/${name}.kiln.yaml`;
+    code.innerHTML = sources[name].html;
+    more.textContent = sources[name].more > 0 ? `… and ${sources[name].more.toLocaleString("en")} more lines.` : "";
+  };
+  chipGroup(document.getElementById("show-pick")!, show);
+  // these are several MB each: load the first only once the stage is really on screen
+  const first = (document.querySelector("#show-pick button") as HTMLButtonElement).dataset.value!;
+  new IntersectionObserver((entries, o) => {
+    if (entries[0].isIntersecting) {
+      o.disconnect();
+      show(first);
+    }
+  }, { threshold: 0.35 }).observe(stage);
+</script>
+
+<style>
+  .show {
+    margin: 36px 0 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stage {
+    aspect-ratio: 16 / 9;
+  }
+  .thumbs {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
+  }
+  .thumbs button {
+    width: 100%;
+    background: linear-gradient(#cfe0f2, #eef4fa);
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 6px 6px 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font: 600 0.9rem var(--font-display);
+    color: #3a2c25;
+  }
+  .thumbs button[aria-pressed="true"] {
+    border-color: var(--clay);
+  }
+  .thumbs img {
+    width: 100%;
+    max-width: 160px;
+    height: auto;
+  }
+  figcaption,
+  .more,
+  summary {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  summary {
+    cursor: pointer;
+  }
+  .more {
+    margin: 6px 2px 0;
+  }
+  .src {
+    max-height: 320px;
+    font-size: 12px;
+    margin-top: 10px;
+  }
+  @media (max-width: 700px) {
+    .stage {
+      aspect-ratio: 4 / 3;
+    }
+  }
+</style>

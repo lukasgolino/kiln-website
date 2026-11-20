@@ -103,7 +103,8 @@ export class Viewer {
   playing = !reducedMotion();
   onClips: (names: string[]) => void = () => {};
 
-  constructor(private host: HTMLElement) {
+  /** `tight`: frame the model on its height and turning width (wide stages), not on its bounding sphere. */
+  constructor(private host: HTMLElement, private tight = false) {
     this.renderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
@@ -217,8 +218,14 @@ export class Viewer {
     const box = new Box3().setFromObject(model);
     const size = box.getSize(new Vector3());
     const centre = box.getCenter(new Vector3());
+    const half = ((this.camera.fov / 2) * Math.PI) / 180;
     const radius = size.length() * 0.48; // the bounding sphere, a little tight: corners rarely all face the camera
-    const dist = radius / Math.sin(((this.camera.fov / 2) * Math.PI) / 180);
+    let dist = radius / Math.sin(half);
+    if (this.tight) {
+      // far enough for its height, and for its widest turn across the stage
+      const turning = Math.hypot(size.x, size.z) / 2;
+      dist = (Math.max(size.y / 2, turning / this.camera.aspect) / Math.tan(half)) * 1.14 + turning;
+    }
     this.controls.target.copy(centre);
     this.camera.position.copy(centre).add(new Vector3(0.45, 0.32, 1).normalize().multiplyScalar(dist));
     this.camera.near = dist / 20;

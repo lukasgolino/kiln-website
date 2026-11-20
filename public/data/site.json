@@ -1,7 +1,7 @@
 {
  "styles": {
   "soft_toy": {
-   "description": "Soft toys: smooth rounded shapes, saturated flat colours, soft light, no outlines (Dear Passengers, Fall Guys)",
+   "description": "Soft toys: smooth rounded shapes, saturated flat colours, soft light, no outlines (vinyl figures, party-game toys)",
    "smooth": true,
    "look": {
     "shader": "standard",
@@ -27,103 +27,166 @@
     "sun_yaw": 30.0,
     "sun_energy": 1.1,
     "sun_color": "#fff6e8",
+    "fill_energy": 0.0,
+    "fill_pitch": -20.0,
+    "fill_yaw": 1000.0,
+    "fill_color": "#dde8ff",
     "shadows": true,
     "compat_shadows": false,
     "fog": 0.0,
     "fog_color": "#c8d8e8",
     "rim_light": 0.0,
     "rim_light_color": "#ffffff",
-    "rim_light_power": 3.0
+    "rim_light_power": 3.0,
+    "post": "",
+    "post_lines": 200,
+    "pixel_aspect": 0.8333,
+    "post_palette": "",
+    "dither": "bayer4",
+    "dither_strength": 1.0,
+    "dither_space": "screen",
+    "post_colors": []
    },
    "materials": {
+    "clear": {
+     "roughness": 0.05,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0,
+     "alpha": 0.35,
+     "grain": 0.0,
+     "grain_size": 0.01
+    },
     "default": {
      "roughness": 0.5,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "fabric": {
      "roughness": 0.85,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glass": {
      "roughness": 0.1,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glow": {
      "roughness": 0.5,
      "metallic": 0.0,
      "emission": 2.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "gold": {
      "roughness": 0.45,
      "metallic": 0.5,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leaf": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leather": {
      "roughness": 0.7,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "metal": {
      "roughness": 0.55,
      "metallic": 0.35,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "paint": {
      "roughness": 0.55,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "plastic": {
      "roughness": 0.42,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "rubber": {
      "roughness": 0.75,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "skin": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.2
+     "rim": 0.2,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "stone": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "wood": {
      "roughness": 0.75,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     }
    }
   },
   "low_poly": {
-   "description": "Low poly: faceted flat-shaded shapes, few triangles, flat colours (Kenney, Monument Valley)",
+   "description": "Low poly: faceted flat-shaded shapes, few triangles, flat colours (low-poly asset packs, geometric puzzle games)",
    "smooth": false,
    "look": {
     "shader": "standard",
@@ -149,103 +212,166 @@
     "sun_yaw": 35.0,
     "sun_energy": 1.2,
     "sun_color": "#fff6e8",
+    "fill_energy": 0.0,
+    "fill_pitch": -20.0,
+    "fill_yaw": 1000.0,
+    "fill_color": "#dde8ff",
     "shadows": true,
     "compat_shadows": false,
     "fog": 0.0,
     "fog_color": "#c8d8e8",
     "rim_light": 0.0,
     "rim_light_color": "#ffffff",
-    "rim_light_power": 3.0
+    "rim_light_power": 3.0,
+    "post": "",
+    "post_lines": 200,
+    "pixel_aspect": 0.8333,
+    "post_palette": "",
+    "dither": "bayer4",
+    "dither_strength": 1.0,
+    "dither_space": "screen",
+    "post_colors": []
    },
    "materials": {
+    "clear": {
+     "roughness": 0.2,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0,
+     "alpha": 0.45,
+     "grain": 0.0,
+     "grain_size": 0.01
+    },
     "default": {
      "roughness": 0.85,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "fabric": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glass": {
      "roughness": 0.3,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glow": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 1.5,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "gold": {
      "roughness": 0.45,
      "metallic": 0.5,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leaf": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leather": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "metal": {
      "roughness": 0.5,
      "metallic": 0.5,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "paint": {
      "roughness": 0.85,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "plastic": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "rubber": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "skin": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "stone": {
      "roughness": 0.95,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "wood": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     }
    }
   },
   "toon": {
-   "description": "Toon: cel-shaded bands and dark outlines on smooth shapes (Wind Waker, Sable-lite)",
+   "description": "Toon: cel-shaded bands and dark outlines on smooth shapes (cel-shaded adventure games)",
    "smooth": true,
    "look": {
     "shader": "toon",
@@ -271,98 +397,161 @@
     "sun_yaw": 30.0,
     "sun_energy": 1.1,
     "sun_color": "#fff6e8",
+    "fill_energy": 0.0,
+    "fill_pitch": -20.0,
+    "fill_yaw": 1000.0,
+    "fill_color": "#dde8ff",
     "shadows": true,
     "compat_shadows": false,
     "fog": 0.0,
     "fog_color": "#c8d8e8",
     "rim_light": 0.0,
     "rim_light_color": "#ffffff",
-    "rim_light_power": 3.0
+    "rim_light_power": 3.0,
+    "post": "",
+    "post_lines": 200,
+    "pixel_aspect": 0.8333,
+    "post_palette": "",
+    "dither": "bayer4",
+    "dither_strength": 1.0,
+    "dither_space": "screen",
+    "post_colors": []
    },
    "materials": {
+    "clear": {
+     "roughness": 0.05,
+     "metallic": 0.0,
+     "emission": 0.0,
+     "rim": 0.0,
+     "alpha": 0.35,
+     "grain": 0.0,
+     "grain_size": 0.01
+    },
     "default": {
      "roughness": 0.5,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "fabric": {
      "roughness": 0.85,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glass": {
      "roughness": 0.1,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "glow": {
      "roughness": 0.5,
      "metallic": 0.0,
      "emission": 2.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "gold": {
      "roughness": 0.45,
      "metallic": 0.5,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leaf": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "leather": {
      "roughness": 0.7,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "metal": {
      "roughness": 0.55,
      "metallic": 0.35,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "paint": {
      "roughness": 0.55,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "plastic": {
      "roughness": 0.42,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "rubber": {
      "roughness": 0.75,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "skin": {
      "roughness": 0.8,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.2
+     "rim": 0.2,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "stone": {
      "roughness": 0.9,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     },
     "wood": {
      "roughness": 0.75,
      "metallic": 0.0,
      "emission": 0.0,
-     "rim": 0.0
+     "rim": 0.0,
+     "alpha": 1.0,
+     "grain": 0.0,
+     "grain_size": 0.01
     }
    }
   }
@@ -434,9 +623,9 @@
   },
   "passenger": {
    "triangles": {
-    "soft_toy": 7824,
-    "low_poly": 818,
-    "toon": 7824
+    "soft_toy": 7840,
+    "low_poly": 874,
+    "toon": 7840
    },
    "description": "big-headed caricature passenger in a holiday shirt",
    "cls": "character",
@@ -492,7 +681,7 @@
   "seat": {
    "triangles": {
     "soft_toy": 2956,
-    "low_poly": 266,
+    "low_poly": 334,
     "toon": 2956
    },
    "description": "airline seat",
@@ -505,9 +694,9 @@
   },
   "trebuchet": {
    "triangles": {
-    "soft_toy": 13844,
-    "low_poly": 832,
-    "toon": 13844
+    "soft_toy": 13846,
+    "low_poly": 1872,
+    "toon": 13846
    },
    "description": "siege trebuchet on wheels; the arm swings to throw",
    "cls": "machine",
@@ -558,10 +747,10 @@
     {
      "rule": "W103",
      "severity": "warning",
-     "message": "the model is 2 separate pieces: a floating part, or a gap between parts that should touch",
+     "message": "the model is 2 separate pieces: the smallest (parts with id arm_l) floats around [0.72, 0.55, 0.22]; move it to touch (or overlap) the rest, or mark it `separate: true` in rig if it is meant to come off",
      "path": "models/archer.kiln.yaml",
      "line": null,
-     "where": ""
+     "where": "parts"
     }
    ],
    "warnings": 1
@@ -572,5 +761,203 @@
   },
   "diff": "--- archer.kiln.yaml\n+++ archer.kiln.yaml\n@@ -4,6 +4,6 @@\n tags: [siege, soldier]\n-status: draft\n+status: approved\n style_version: 1\n parts:\n-  - torus: { at: [0.72, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n+  - torus: { at: [0.5, 0.55, 0.05], radius: 0.36, thickness: 0.022, rotate: [0, 0, 90] }\n     id: arm_l\n@@ -11,5 +11,5 @@\n     material: wood\n-  - box: { at: [0.72, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n+  - box: { at: [0.5, 0.55, -0.15], size: [0.2, 0.9, 0.4] }\n     cut: true\n-  - capsule: { from: [0.72, 0.2, 0.05], to: [0.72, 0.9, 0.05], radius: 0.012 }\n+  - capsule: { from: [0.5, 0.2, 0.05], to: [0.5, 0.9, 0.05], radius: 0.012 }\n     id: arm_l"
  },
- "kiln": "0.21.0"
+ "heroes": {
+  "order": [
+   "locomotive",
+   "dragon",
+   "owl",
+   "diver"
+  ],
+  "looks": {
+   "creatures": {
+    "shader": "standard",
+    "toon_bands": 3,
+    "toon_softness": 0.0,
+    "toon_shadow_color": "",
+    "toon_specular": 0.0,
+    "toon_shadows": "soft",
+    "outline": 0.0,
+    "outline_color": "#1a1420",
+    "outline_space": "metres",
+    "tonemapper": "filmic",
+    "exposure": 1.05,
+    "saturation": 1.05,
+    "contrast": 1.0,
+    "ssao": true,
+    "glow": false,
+    "ambient": 1.15,
+    "sky_top": "#7fa3c8",
+    "sky_horizon": "#d6dfe6",
+    "ground": "#9a9480",
+    "sun_pitch": -50.0,
+    "sun_yaw": 35.0,
+    "sun_energy": 0.9,
+    "sun_color": "#fff2e0",
+    "fill_energy": 0.3,
+    "fill_pitch": -20.0,
+    "fill_yaw": 1000.0,
+    "fill_color": "#dfe8ff",
+    "shadows": true,
+    "compat_shadows": false,
+    "fog": 0.0,
+    "fog_color": "#c8d8e8",
+    "rim_light": 0.0,
+    "rim_light_color": "#ffffff",
+    "rim_light_power": 3.0,
+    "post": "",
+    "post_lines": 200,
+    "pixel_aspect": 0.8333,
+    "post_palette": "",
+    "dither": "bayer4",
+    "dither_strength": 1.0,
+    "dither_space": "screen",
+    "post_colors": []
+   },
+   "machines": {
+    "shader": "standard",
+    "toon_bands": 3,
+    "toon_softness": 0.0,
+    "toon_shadow_color": "",
+    "toon_specular": 0.0,
+    "toon_shadows": "soft",
+    "outline": 0.0,
+    "outline_color": "#1a1420",
+    "outline_space": "metres",
+    "tonemapper": "filmic",
+    "exposure": 1.0,
+    "saturation": 1.08,
+    "contrast": 1.02,
+    "ssao": true,
+    "glow": false,
+    "ambient": 1.0,
+    "sky_top": "#6f95bd",
+    "sky_horizon": "#d9e1e6",
+    "ground": "#a39a86",
+    "sun_pitch": -46.0,
+    "sun_yaw": 32.0,
+    "sun_energy": 1.15,
+    "sun_color": "#fff3e2",
+    "fill_energy": 0.3,
+    "fill_pitch": -18.0,
+    "fill_yaw": 1000.0,
+    "fill_color": "#dfe8ff",
+    "shadows": true,
+    "compat_shadows": false,
+    "fog": 0.0,
+    "fog_color": "#c8d8e8",
+    "rim_light": 0.0,
+    "rim_light_color": "#ffffff",
+    "rim_light_power": 3.0,
+    "post": "",
+    "post_lines": 200,
+    "pixel_aspect": 0.8333,
+    "post_palette": "",
+    "dither": "bayer4",
+    "dither_strength": 1.0,
+    "dither_space": "screen",
+    "post_colors": []
+   }
+  },
+  "models": {
+   "dragon": {
+    "project": "creatures",
+    "description": "forest dragon, 1.7 m at the head: scale coat, belly plates, back spines, half-open wings",
+    "cls": "creature",
+    "height": 2.04,
+    "parts": 29,
+    "triangles": 69458,
+    "bytes": 6560256,
+    "maps": [
+     "color_map",
+     "normal_map"
+    ],
+    "animations": {
+     "idle": {
+      "loop": true,
+      "fps": 8.0,
+      "gltf": "idle-loop"
+     },
+     "roar": {
+      "loop": false,
+      "fps": 10.0,
+      "gltf": "roar"
+     }
+    },
+    "source_lines": 907
+   },
+   "owl": {
+    "project": "creatures",
+    "description": "great horned owl on a mossy log, 0.7 m: layered wing and tail feathers, ear tufts, gripping talons",
+    "cls": "creature",
+    "height": 0.71,
+    "parts": 15,
+    "triangles": 56940,
+    "bytes": 5798256,
+    "maps": [
+     "color_map",
+     "normal_map"
+    ],
+    "animations": {
+     "flap": {
+      "loop": false,
+      "fps": 12.0,
+      "gltf": "flap"
+     },
+     "idle": {
+      "loop": true,
+      "fps": 8.0,
+      "gltf": "idle-loop"
+     }
+    },
+    "source_lines": 624
+   },
+   "diver": {
+    "project": "machines",
+    "description": "deep-sea diver in a canvas suit: riveted copper helmet with bolted ports, breastplate with wing nuts, weighted boots, air tanks",
+    "cls": "character",
+    "height": 1.94,
+    "parts": 32,
+    "triangles": 59020,
+    "bytes": 3064064,
+    "maps": [],
+    "animations": {
+     "idle": {
+      "loop": true,
+      "fps": 8.0,
+      "gltf": "idle-loop"
+     },
+     "wave": {
+      "loop": true,
+      "fps": 10.0,
+      "gltf": "wave-loop"
+     }
+    },
+    "source_lines": 1142
+   },
+   "locomotive": {
+    "project": "machines",
+    "description": "narrow-gauge side-tank engine on a length of track: riveted tanks, brass dome, spoked wheels and working rods",
+    "cls": "machine",
+    "height": 2.35,
+    "parts": 33,
+    "triangles": 63840,
+    "bytes": 4368468,
+    "maps": [],
+    "animations": {
+     "run": {
+      "loop": true,
+      "fps": 16.0,
+      "gltf": "run-loop"
+     },
+     "whistle": {
+      "loop": true,
+      "fps": 8.0,
+      "gltf": "whistle-loop"
+     }
+    },
+    "source_lines": 1617
+   }
+  }
+ },
+ "kiln": "0.35.0"
 }

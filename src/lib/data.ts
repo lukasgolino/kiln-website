@@ -17,3 +17,9 @@ export const source = (model: string) => readText(`art/demo/models/${model}.kiln
 export const asset = (url: string) => import.meta.env.BASE_URL.replace(/\/?$/, "/") + url.replace(/^\//, "");
 /** The three styles' looks, for the in-browser viewer. */
 export const looks = () => Object.fromEntries(Object.entries(site().styles).map(([k, v]: [string, any]) => [k, v.look]));
+
+/** A showpiece's source: its first lines (the page shows an excerpt) and the file's line count. */
+export function heroSource(project: string, model: string, show = 60): { head: string; lines: number } {
+  const all = readText(`art/heroes/${project}/models/${model}.kiln.yaml`).trimEnd().split("\n");
+  return { head: all.slice(0, show).join("\n"), lines: all.length };
+}

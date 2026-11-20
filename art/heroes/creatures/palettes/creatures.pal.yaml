@@ -1,0 +1,44 @@
+name: creatures
+# Forest colours for the two showpieces (PAGAN palette format; models use the names).
+colors:
+  "0": { hex: "#17130f", name: ink }
+  "1": { hex: "#f3ecd8", name: ivory }
+  "2": { hex: "#27472f", name: scale_pine }
+  "3": { hex: "#3f6c37", name: scale_moss }
+  "4": { hex: "#648f41", name: scale_fern }
+  "5": { hex: "#a9c765", name: scale_lime }
+  "6": { hex: "#e0cd95", name: belly_cream }
+  "7": { hex: "#bd9c58", name: belly_ochre }
+  "8": { hex: "#e6d9b8", name: horn_bone }
+  "9": { hex: "#8a6846", name: horn_umber }
+  "a": { hex: "#b4523a", name: wing_rust }
+  "b": { hex: "#dc8e4c", name: wing_ember }
+  "c": { hex: "#7d3327", name: wing_wine }
+  "d": { hex: "#f2a827", name: eye_amber }
+  "e": { hex: "#c2566a", name: tongue }
+  "f": { hex: "#55222c", name: mouth }
+  "g": { hex: "#39332e", name: claw }
+  "h": { hex: "#4d3829", name: feather_umber }
+  "i": { hex: "#8a6240", name: feather_brown }
+  "j": { hex: "#b98a55", name: feather_tawny }
+  "k": { hex: "#dcc08e", name: feather_buff }
+  "l": { hex: "#f1e6cb", name: feather_cream }
+  "m": { hex: "#c07c42", name: disc_russet }
+  "n": { hex: "#2b2019", name: disc_rim }
+  "o": { hex: "#45444a", name: beak_slate }
+  "p": { hex: "#f5b81f", name: eye_gold }
+  "q": { hex: "#a99b80", name: toe_grey }
+  "r": { hex: "#6b4c34", name: bark }
+  "s": { hex: "#473325", name: bark_dark }
+  "t": { hex: "#c9a26d", name: heartwood }
+  "u": { hex: "#5d8438", name: moss }
+  "v": { hex: "#8dab4c", name: moss_light }
+  "w": { hex: "#c44f3a", name: cap_red }
+  "x": { hex: "#ece2cc", name: stem_cream }
+ramps:
+  scales: ["2", "3", "4", "5"]
+  bellies: ["7", "6"]
+  wings: ["c", "a", "b"]
+  feathers: ["h", "i", "j", "k", "l"]
+  barks: ["s", "r", "t"]
+  mosses: ["u", "v"]

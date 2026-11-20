@@ -5,6 +5,23 @@ All notable changes to this site are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-20
+
+### Added
+
+- Showpieces, right under the hero: four new high-detail models, each a real .glb to turn and play. A forest dragon
+  (69,000 triangles, a relief scale coat with baked colour and normal maps), a narrow-gauge steam locomotive (64,000
+  triangles of exact hard surfaces, rivets as real parts, working rods), a great horned owl on a mossy log (57,000,
+  rows of real feathers) and a deep-sea diver (59,000, a soft humanoid skin under riveted hardware). Each shows the
+  start of its source and its line count. Their projects are in `art/heroes/`.
+- The viewer frames a model on its height and turning width where the stage is wide.
+
+### Changed
+
+- Pins KILN 0.35.0 (was 0.21.0), with the `fast` and `bake` extras; assets and docs rebuilt with it.
+- The social card shows the showpieces.
+- Ten style presets are named (skin, the three retro screens and the paint look joined the first five).
+
 ## [0.4.2] - 2026-11-09
 
 ### Changed
@@ -74,7 +91,9 @@ All notable changes to this site are documented here. The format is based on
 - `astro check` errors: `aria-pressed` was passed as a string in the gallery and style pickers
   ([#1](https://github.com/lukasgolino/kiln-website/issues/1)).
 
-[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln-website/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/lukasgolino/kiln-website/compare/v0.4.2...v0.5.0
+[0.4.2]: https://github.com/lukasgolino/kiln-website/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/lukasgolino/kiln-website/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/lukasgolino/kiln-website/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/lukasgolino/kiln-website/compare/v0.3.0...v0.3.1
