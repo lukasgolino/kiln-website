@@ -1,0 +1,11 @@
+# The showpieces of the KILN site: a forest dragon and a great horned owl, built as high-detail glbs for the browser.
+default_style = "showpiece"    # styles/showpiece.style.toml (extends the skin preset)
+default_palette = "creatures"  # palettes/creatures.pal.yaml
+output_dir = "build"
+preview_dir = "previews"
+preview_size = 480
+export = ["glb"]               # three.js loads the glb with the standard glTF material: no engine scenes
+style_version = 1
+
+[lint]
+disable = []

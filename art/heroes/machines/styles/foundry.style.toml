@@ -1,0 +1,73 @@
+description = "Foundry showpieces: machined hard-surface metal, riveted plate, brass and copper, painted iron, oiled wood"
+extends = "soft_toy"
+notes = """
+Shapes: chunky and exaggerated, like a well-made model on a shelf: boilers fatter, chimneys taller, helmets rounder
+than the real thing. Everything machined is a hard part; the edges that show are rounded so they catch the light
+(a `lathe` with a `bevel` for round things, `bevel_edges` on boxes). Only cloth, rubber, coal, ballast and rock are
+smooth parts.
+Detail comes in three tiers. The big forms (boiler, cab, helmet, breastplate) carry the silhouette. Each big form is
+then broken by bands, flanges, frames and plates a few centimetres proud. The smallest tier is hardware in rows and
+rings: rivets, bolts, wing nuts, hinges, handwheels. Hardware is always a real part, never paint.
+Colour: one painted body colour per machine with a contrasting lining colour, brass and copper for everything a
+fitter would polish, dark iron for running gear, warm wood where hands and feet go. Never more than one accent.
+Materials: metals are only part metallic (the models are lit by a sun and a sky colour, with no reflections to
+mirror), so their base colours are bright and the shine comes from low roughness.
+Hero detail: round hard shapes say their `sides` (44-48 for the big forms, 16-28 for fittings, 6-8 for bars, nuts
+and rivets). A bevel on a `cylinder` rounds every side edge as well (ten times the triangles): turn it as a `lathe`.
+"""
+
+[shape]
+smooth = true
+sharp_angle = 40
+resolution = 0.006
+max_cells = 512
+hard_surface = "always"
+hard_sides = 24
+
+[budgets]
+default = 90000
+machine = 90000
+vehicle = 90000
+hero = 90000
+character = 90000
+
+[materials]
+paint = { roughness = 0.42, metallic = 0.08 }       # enamelled plate
+iron = { roughness = 0.6, metallic = 0.3 }          # running gear, frames, lead
+steel = { roughness = 0.34, metallic = 0.4 }        # polished rods and tyres
+brass = { roughness = 0.3, metallic = 0.42 }
+copper = { roughness = 0.34, metallic = 0.42 }
+wood = { roughness = 0.8 }
+canvas = { roughness = 0.92 }
+rubber = { roughness = 0.78 }
+leather = { roughness = 0.7 }
+stone = { roughness = 0.95 }
+glass = { roughness = 0.08, metallic = 0.1 }
+lamp = { roughness = 0.3, emission = 0.75 }
+steam = { roughness = 1.0 }
+
+[shade]
+cavity = 0.26
+top = 0.06
+under = 0.12
+
+[look]
+shader = "standard"
+tonemapper = "filmic"
+exposure = 1.0
+saturation = 1.08
+contrast = 1.02
+ssao = true
+glow = false
+ambient = 1.0
+sky_top = "#6f95bd"
+sky_horizon = "#d9e1e6"
+ground = "#a39a86"
+sun_pitch = -46.0
+sun_yaw = 32.0
+sun_energy = 1.15
+sun_color = "#fff3e2"
+fill_energy = 0.3
+fill_pitch = -18.0
+fill_color = "#dfe8ff"
+shadows = true

@@ -1,0 +1,48 @@
+name: workshop
+# Workshop colours for the two machines (PAGAN palette format; models use the names).
+colors:
+  "0": { hex: "#1a1b1e", name: soot }
+  "1": { hex: "#2f3237", name: iron_dark }
+  "2": { hex: "#4b5058", name: iron }
+  "3": { hex: "#8e969f", name: steel }
+  "4": { hex: "#c3c9ce", name: steel_bright }
+  "5": { hex: "#1f5a44", name: green_deep }
+  "6": { hex: "#2f7a58", name: green }
+  "7": { hex: "#a62f26", name: red }
+  "8": { hex: "#6e211d", name: red_dark }
+  "9": { hex: "#e9dcb6", name: cream }
+  "a": { hex: "#a8802f", name: brass_dark }
+  "b": { hex: "#cf9f3c", name: brass }
+  "c": { hex: "#f0cf6e", name: brass_bright }
+  "d": { hex: "#8f4a2b", name: copper_dark }
+  "e": { hex: "#c96f42", name: copper }
+  "f": { hex: "#e39a6a", name: copper_bright }
+  "g": { hex: "#5b3d27", name: wood_dark }
+  "h": { hex: "#8a5f3a", name: wood }
+  "i": { hex: "#b58a57", name: wood_light }
+  "j": { hex: "#c7b48a", name: canvas }
+  "k": { hex: "#a8946b", name: canvas_dark }
+  "l": { hex: "#6a4630", name: leather }
+  "m": { hex: "#3d2a1f", name: leather_dark }
+  "n": { hex: "#2a2b2d", name: rubber }
+  "o": { hex: "#6f7a80", name: lead }
+  "p": { hex: "#22333d", name: glass }
+  "q": { hex: "#ffd98a", name: lamp_glow }
+  "r": { hex: "#7d7a72", name: rock }
+  "s": { hex: "#5e5b55", name: rock_dark }
+  "t": { hex: "#8f8778", name: ballast }
+  "u": { hex: "#6f8f6a", name: weed }
+  "v": { hex: "#d8553a", name: coral }
+  "w": { hex: "#f1ead8", name: shell }
+  "x": { hex: "#15171a", name: coal }
+  "y": { hex: "#d5ebf0", name: bubble }
+ramps:
+  irons: ["0", "1", "2", "3", "4"]
+  greens: ["5", "6"]
+  reds: ["8", "7"]
+  brasses: ["a", "b", "c"]
+  coppers: ["d", "e", "f"]
+  woods: ["g", "h", "i"]
+  canvases: ["k", "j"]
+  leathers: ["m", "l"]
+  rocks: ["s", "r"]

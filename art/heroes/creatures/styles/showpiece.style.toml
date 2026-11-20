@@ -1,0 +1,44 @@
+description = "Showpiece creatures: sculpted bodies under layered scales and feathers, matte painted colour, crisp horn and claw"
+extends = "skin"
+notes = """
+Shapes: one continuous sculpted body per creature, built from a few big blended forms, chunky and readable from far
+away. Small detail comes in two tiers. The coat (scales, small feathers, bark, moss) is `relief:` on the body,
+displaced so it breaks the outline, each patch running from its ground colour to a lighter tip. The features that
+define the silhouette are real parts written in rows: back spines, belly plates, horns, teeth, wing fingers and
+membranes; flight feathers, a tail fan, ear tufts.
+Hard things stay crisp: claws, teeth, beaks and eyes sit on the surface with blend 0 and never fade into their
+neighbours. Soft things melt: a throat, a facial disc or the dark band down a back fades into the coat with
+`color_blend`.
+Proportions: big heads, heavy feet, large eyes with a clear pupil. Colour: forest greens, warm creams and browns, one
+warm accent per creature (rust wings, gold eyes). Everything matte except eyes, claws, horn and teeth.
+The models are shown in a browser through the standard glTF material: the look has to come from geometry, colour,
+shade paint and the baked maps, never from a look kit.
+"""
+
+[shape]
+smooth = true
+sharp_angle = 50
+resolution = 0.006
+max_cells = 640
+color_blend = 0.03
+
+[budgets]
+creature = 80000
+hero = 80000
+
+[materials]
+scale = { roughness = 0.7 }
+plate = { roughness = 0.6 }
+membrane = { roughness = 0.75 }
+feather = { roughness = 0.92 }
+horn = { roughness = 0.45 }
+claw = { roughness = 0.35 }
+ivory = { roughness = 0.35 }
+eye = { roughness = 0.12 }
+bark = { roughness = 0.95 }
+moss = { roughness = 0.98 }
+
+[shade]
+cavity = 0.38
+top = 0.1
+under = 0.14

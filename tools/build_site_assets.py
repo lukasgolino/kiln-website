@@ -4,10 +4,12 @@
 
 Writes:
   public/models/<style>/<model>.glb   the demo project (art/demo) built once per style: the real files a game loads
-  public/data/site.json               per style: the resolved look; per model: manifest entry, triangles per style
+  public/models/heroes/<model>.glb    the showpieces (art/heroes/<project>), each project in its own style
+  public/data/site.json               per style: the resolved look; per model: manifest entry, triangles per style;
+                                      `heroes`: the showpieces and their projects' looks
   public/img/                         KILN's own previews: line-up, turntable, filmstrip, the lint story, Godot screenshot
   public/brand/                       the icon (art/brand/models/pot.kiln.yaml) rendered by KILN
-  public/og/                          the social card
+  public/og/                          the social card (the showpieces' line-up)
   src/content/docs/                   reference.md (the skill's topics), SKILL.md (workflow) and CHANGELOG.md, plus meta.json
 """
 
@@ -18,6 +20,7 @@ import dataclasses
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -41,9 +44,9 @@ KILN = [sys.executable, "-m", "kiln"]
 
 def kiln_cli(args: list[str], cwd: Path) -> dict[str, Any]:
     done = subprocess.run([*KILN, *args, "--json"], cwd=cwd, capture_output=True, text=True)
+    if done.returncode and args[0] != "lint":  # also a build killed for memory, which leaves no JSON
+        raise SystemExit(f"kiln {' '.join(args)} failed in {cwd} (exit {done.returncode}):\n{done.stdout}\n{done.stderr}")
     result: dict[str, Any] = json.loads(done.stdout)
-    if done.returncode and args[0] != "lint":
-        raise SystemExit(f"kiln {' '.join(args)} failed in {cwd}:\n{done.stdout}\n{done.stderr}")
     return result
 
 
@@ -63,7 +66,7 @@ def builts(root: Path) -> dict[str, Any]:
     for path in project.model_paths():
         model, style, findings = project.load(path)
         assert model and style, findings
-        out[model.name] = build_cached(model, style, palette, None)
+        out[model.name] = build_cached(model, style, palette, root / ".kiln-cache")  # `kiln build` left it there
     return out
 
 
@@ -103,6 +106,85 @@ def models(public: Path, work: Path) -> dict[str, Any]:
             "look": dataclasses.asdict(loaded.look),
             "materials": {k: dataclasses.asdict(v) for k, v in sorted(loaded.materials.items())},
         }
+    return data
+
+
+# The showpieces, in page order (the first opens); every model in art/heroes/*/models must be listed.
+HEROES = ["locomotive", "dragon", "owl", "diver"]
+MAP_QUALITY = 90  # WebP quality of a showpiece's colour and normal maps
+WEBP = "EXT_texture_webp"
+
+
+def web_glb(glb: Path, out: Path) -> int:
+    """A built glb copied for the browser: the mesh untouched, the maps it names beside it (2048 px PNGs, several MB
+    each) re-encoded as WebP and its textures pointed at them through EXT_texture_webp (required: there is no PNG
+    fallback). Lossy on purpose: lossless normal maps are 3 MB each; at this quality a relief normal map is off by
+    about 4 degrees on average, which doesn't show in the viewer. Returns the bytes a visitor downloads."""
+    raw = glb.read_bytes()
+    length = struct.unpack_from("<I", raw, 12)[0]
+    gltf = json.loads(raw[20 : 20 + length])
+    rest = raw[20 + length :]
+    total = 0
+    encoded = set()
+    for index, image in enumerate(gltf.get("images", [])):
+        if "uri" not in image or image["uri"].startswith("data:"):  # inside the glb: left as built
+            continue
+        target = out.parent / (Path(image["uri"]).stem + ".webp")
+        Image.open(glb.parent / image["uri"]).save(target, "WEBP", quality=MAP_QUALITY, method=6)
+        image["uri"], image["mimeType"] = target.name, "image/webp"
+        total += target.stat().st_size
+        encoded.add(index)
+    if not encoded:  # nothing to re-encode: the file as built
+        shutil.copyfile(glb, out)
+        return out.stat().st_size
+    for texture in gltf.get("textures", []):
+        if texture.get("source") in encoded:
+            texture.setdefault("extensions", {})[WEBP] = {"source": texture.pop("source")}
+    for key in ("extensionsUsed", "extensionsRequired"):
+        gltf[key] = sorted({*gltf.get(key, []), WEBP})
+    text = json.dumps(gltf, separators=(",", ":"), ensure_ascii=False).encode()
+    text += b" " * (-len(text) % 4)
+    body = struct.pack("<I4s", len(text), b"JSON") + text + rest
+    out.write_bytes(struct.pack("<4sII", b"glTF", 2, 12 + len(body)) + body)
+    return total + out.stat().st_size
+
+
+def heroes(public: Path, work: Path) -> dict[str, Any]:
+    """The showpieces: each project under art/heroes built once in its own style. Per model the glb, a still and the
+    numbers the page quotes; per project the look the viewer lights it with."""
+    data: dict[str, Any] = {"order": HEROES, "looks": {}, "models": {}}
+    stills: dict[str, Any] = {}
+    sources = sorted(p for p in (ART / "heroes").iterdir() if (p / "kiln.toml").is_file())
+    found = sorted(m.name.removesuffix(".kiln.yaml") for src in sources for m in (src / "models").glob("*.kiln.yaml"))
+    if found != sorted(HEROES):  # before half an hour of builds
+        raise SystemExit(f"HEROES lists {sorted(HEROES)}, art/heroes has {found}")
+    for src in sources:
+        project = copy_project(src, work / f"heroes-{src.name}")
+        kiln_cli(["build"], project)
+        manifest = json.loads((project / "build" / "manifest.json").read_text(encoding="utf-8"))
+        loaded, _ = load_project(project).style()
+        assert loaded
+        data["looks"][src.name] = dataclasses.asdict(loaded.look)
+        built = builts(project)
+        stills.update(built)
+        (public / "models" / "heroes").mkdir(parents=True, exist_ok=True)
+        for name, entry in manifest["models"].items():
+            size = web_glb(project / "build" / entry["glb"], public / "models" / "heroes" / f"{name}.glb")
+            source = (src / "models" / f"{name}.kiln.yaml").read_text(encoding="utf-8")
+            data["models"][name] = dict(
+                project=src.name,
+                description=entry["description"],
+                cls=entry["class"],
+                height=round(entry["bounds"]["max"][1] - entry["bounds"]["min"][1], 2),
+                parts=len(entry["parts"]),
+                triangles=entry["triangles"],
+                bytes=size,
+                maps=[k for k in ("color_map", "normal_map") if k in entry],
+                animations={k: {"loop": a["loop"], "fps": a["fps"], "gltf": a["gltf_name"]} for k, a in entry["animations"].items()},
+                source_lines=len(source.rstrip("\n").split("\n")),
+            )
+            save(render(built[name], View(yaw=25, pitch=12), 320), public / "img" / "heroes" / f"{name}.png")  # 2x its slot
+    save(lineup([stills[name] for name in HEROES], 520), work / "heroes-lineup.png")  # the social card's
     return data
 
 
@@ -154,8 +236,8 @@ def brand(public: Path, work: Path) -> Image.Image:
     return big
 
 
-def og(public: Path, pot: Image.Image) -> None:
-    line = Image.open(public / "img" / "lineup.png").convert("RGBA")
+def og(public: Path, pot: Image.Image, lineup_png: Path) -> None:
+    line = Image.open(lineup_png).convert("RGBA")
     card = Image.new("RGBA", (1200, 630), "#1b1310")
     scale = min(1100 / line.width, 380 / line.height)
     line = line.resize((round(line.width * scale), round(line.height * scale)), Image.Resampling.LANCZOS)
@@ -226,11 +308,12 @@ def main() -> None:
         work = Path(tmp)
         data = models(public, work)
         data["lint"] = images(public, work, kiln_repo)
+        data["heroes"] = heroes(public, work)
         data["kiln"] = metadata.version("kiln-gen")
         write_json(public / "data" / "site.json", data)
-        og(public, brand(public, work))
+        og(public, brand(public, work), work / "heroes-lineup.png")
         docs(content, kiln_repo)
-    print(f"Built {len(data['models'])} models x {len(STYLES)} styles with kiln {data['kiln']}.")
+    print(f"Built {len(data['models'])} models x {len(STYLES)} styles and {len(data['heroes']['models'])} showpieces with kiln {data['kiln']}.")
 
 
 if __name__ == "__main__":

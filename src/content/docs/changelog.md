@@ -6,9 +6,574 @@ before 1.0).
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-11-19
+
+Paint look: the retro pass gains a second mode that redraws the frame as dabs of pure colour. Existing looks draw as
+before; their look kits change text only (the new uniforms, at their defaults, and the mode switch).
+
+### Added
+
+- `[look] post = "paint"` and the `paint_pointillist` preset: every frame is redrawn as a jittered grid of
+  overlapping, slightly irregular dabs (`post_lines` rows of them), each one pure colour from `post_palette`;
+  neighbouring dabs mix in the eye. Each dab takes the scene's colour at its centre through a pastel grade (more
+  colour, shadows towards violet, lifted towards white) and becomes one of its two nearest palette colours by its own
+  random threshold. `dither_space = "view"` keeps the dabs steady while the camera turns. The library palette
+  `pointillist` holds 16 pastels with violets and blues for shade.
+- Look kit runtime API on the `Retro` node: `set_mode` / `get_mode` (0 retro blocks, 1 paint dabs) and `set_paint` /
+  `get_paint` for the dab settings (`dab_size`, `dab_jitter`, `dab_aspect`, `dab_angle`, `dab_turn`, `dab_round`,
+  `dab_skew`, `vivid`, `lift`, `shadow_hue`, `shadow_tint`, `ground`; numbers are clamped to the ranges the shader
+  covers), both in `get_settings()` (`mode`, `paint`). Any kit with the pass can switch to dabs and back; dabs are
+  fixed to the screen or to view directions, so a world-space kit draws them in screen space (its World pass rests
+  until mode 0) and a paint style with `dither_space = "world"` is E006.
+- Previews draw paint looks as dabs (`kiln preview`; `--no-post` shows what's under them). The dabs are rolled from
+  sines of large numbers, so previews roll other dabs than a GPU: the same look, not the same frame.
+- Retro room: keys 4 (Signac paint, exploratory: pigment dabs fixed to every surface, a surface shader and a project
+  style of the room, not part of KILN's output) and 5 (the pointillist screen filter); the dev panel tunes both.
+
 ### Changed
 
+- Look kits with a post pass carry the paint uniforms and the `mode` switch: `looks/<style>.tscn` of retro styles
+  changes text, not what it draws.
+- `kiln init --style <a paint look>` keeps the starter palette (a retro style still gets its hardware palette as
+  `main`): dabs mix any colour.
+
+## [0.34.0] - 2026-11-13
+
+### Added
+
+- `dither_space = "view"` (#372) and `set_space("view")`: the retro pattern shifts with the camera's yaw and pitch in
+  whole blocks, so turning moves it with the image instead of re-dithering the frame (after a 6-block turn, 96% of
+  the centre's blocks stay the same, against at most 82% in screen space). Any renderer and pattern; walking still
+  shimmers. Previews draw screen space.
+- Retro room (#373): the dev panel picks screen / view / world dither and can snap turning to whole low-res pixels;
+  saved presets carry the space.
+
+## [0.33.1] - 2026-11-13
+
+### Fixed
+
+- A `mirror` part written on the negative side of its axis (e.g. a left leg at x < 0) vanished along with its mirror
+  image: the mirror folded space onto the positive side only. It now folds onto the side the part is on, so left and
+  right mirror alike (#363), for smooth and hard parts (`hard`, `sides`) and lint's open-shell checks. Meshes change
+  for such parts (they now appear) and for a part straddling 0 with its box centre below 0, which now mirrors its
+  negative half (as one with its centre above 0 always mirrored its positive half); everything else is unchanged.
+
+## [0.33.0] - 2026-11-13
+
+Retro tuning (milestone 0.33): the retro pass is tunable live, with four new dither patterns and an opt-in world-space
+dither; the retro room gets a dev panel. Screen-space output of existing looks is unchanged.
+
+### Added
+
+- Retro pass settings are live (#365): every setting is a shader uniform starting at the style's values, and the look
+  kit's `Retro` node has a runtime API (`set_enabled`, `set_lines`, `set_pixel_aspect`, `set_strength`, `set_pattern`,
+  `set_palette` with 1-16 colours, `get_settings`). The shader text is the same for every look; the material holds
+  the settings.
+- Dither patterns `halftone`, `lines`, `hatch` and `noise` (#366), in Godot and in previews; halftone and hatch are
+  ranked tiles like Bayer's, so every tone fills exactly its share.
+- `examples/retro_room/` (#362): a walkable Godot room with nine models on pedestals; 1 / 2 / 3 switch the Atari ST
+  colour, CGA and ST mono looks (Tab cycles). `export.sh` builds a Windows exe. CI runs its headless check.
+- `[look] dither_space = "screen" | "world"` (#367) and `set_space()` on the Retro node (`get_settings()` reports
+  `space`), switchable live: world space fixes the retro dither to surfaces through a depth-reading full-screen quad
+  in the look kit, so it doesn't crawl when the camera moves. Best with `dither = "noise"`; ordered patterns come out
+  irregular in world space. Godot Forward+ only; Mobile, Compatibility and previews keep screen space. Screen space output
+  is unchanged (the look kit gains the quad, hidden).
+- Retro room dev panel (#369): F1 tunes the look live (effect on/off, screen or world dither, pattern, lines, pixel
+  aspect, strength, light bands, palette presets, colour count, colour pickers, randomise one or all) and saves the
+  result as a KILN style + palette (`user://presets/`, the style also to the clipboard).
+
+## [0.32.0] - 2026-11-13
+
+Retro looks: 3D that reads as CGA, Atari ST colour or Atari ST mono (milestone 0.32). Existing styles' output is
+unchanged.
+
+### Added
+
+- `[look] post = "retro"` (#358): every frame drawn at a low resolution (`post_lines`, `pixel_aspect`), snapped to a
+  palette (`post_palette`, at most 16 colours) with ordered dithering (`dither` bayer4 | bayer8 | none,
+  `dither_strength`). In Godot it is a CanvasLayer with a canvas shader inside the style's look kit; headless verify
+  compiles it.
+- Previews draw the same pass (#359), each tile as a screen `post_lines` tall; `kiln preview --no-post` skips it.
+- Presets `retro_st`, `retro_cga` and `retro_mono` (#360), with library palettes `atari_st`, `cga` and `st_mono`;
+  `kiln init --style retro_*` writes the matching palette as `main`.
+- kiln.toml `looks`: look kits to build that no model's style asks for (a game switching looks). The demo builds the
+  three retro kits and the showcase cycles them with L.
+- Palettes take PAGAN 0.23's `hardware: cga | atari-st | atari-st-mono` (#357): a colour the machine can't show or
+  too many colours is E004, naming the nearest legal colour.
+
+## [0.31.0] - 2026-11-13
+
+Milestones 0.26 to 0.31 (not released one by one): characters and clothing (an idle cycle, bundled CC0 clips,
+garment collars, lapels, plackets and short sleeves, folds on legs, motif prints, named and triplanar textures),
+pixel art in the colour map and palette-indexed textures that variants recolour, hard surfaces (gentler bevel loss,
+chosen edges, lathe bevels, flat shading on flats), scenes (`kiln fit`, `mount:`, instances that share one mesh and
+reference models with maps), previews closer to Godot (`kiln style check`, blended glass, agx, a bright ambient in
+Godot), and lint that names parts as written and groups its warnings. Builds of hard parts, scenes with instances and
+looks with ambient above 0.9 change (see Changed).
+
+### Added
+
+- Instances with baked maps, and scenes with maps taking instances: such an instance is a reference, a node that
+  KILN's Godot scene fills with the model's own scene, maps and all (#355).
+- A model placed several times in an unskinned or rigid scene is one mesh in the glb with a node per copy (Godot
+  shares it too); scaled instances keep their decals and textures; a scatter `onto:` a scene stands on its instances
+  as well (#353).
+- Lint W140: a part mirrored in one piece whose `blend_to` names one side of a mirror_id pair (#252).
+- `kiln style check [style]`: each palette colour as the look lights it beside its hex, with its hue and lightness
+  shift, and a swatch sheet (#336).
+- `kiln examples [name]`: the worked example models (the demo's) ship with KILN and print from the CLI; the docs
+  point there (#308).
+- `kiln docs --search` knows engine words: emissive finds glow, metallic metal, transparent alpha and clear,
+  instancing instances, and more (#164).
+- `bevel` and `chamfer` on lathes: the outline's corners are rounded before it is spun (a bezel ring with a lip),
+  as a hard part (#338).
+- `bevel_edges: vertical | top | bottom | horizontal` picks the edges a bevel or chamfer rounds (a thin seat's corners
+  only) (#345).
+- Assemblies: `mount: { to, at, rotate }` on a model built to sit on another (a shared frame: no W106/W123 ground
+  checks; `mount` in the manifest), and `kiln preview <model> --with <others>` to see them together (#181).
+- `kiln fit <a> <b> [--at] [--rotate]`: does b fit a in their shared frame: overlap volume, how deep each goes into
+  the other, the smallest gap (a movement in its case, a crystal under its lip) (#341).
+- `base: [x, y, z]` places a cone or cylinder by its bottom centre (turned with it) instead of `at` (#332).
+- `kiln.api.transform(parts, rotate, about, translate, cut_only)` (positions, rotations, aims, array centres, decal
+  centres and axes; mirrors written out as pairs; scoped cuts), `kiln.api.surface_point()` on lathes and cones,
+  `from_=` for capsules, and a reference with signatures in `kiln docs api` (#172, #206, #346).
+- `kiln preview <model> --variants`: every variant side by side in one sheet, a row each (#330).
+- Palette-indexed textures (`texture: { rows, key }`) and generated pixel art in palette colours (`generate: brushed |
+  specks | scratches | grid | noise`), recoloured by variants (each such variant gets its own glb); lint W137: a
+  pixel-art image off the palette on a model with variants. Decals and textures moved to `kiln docs textures` (#325).
+- Patterns painted per texel into the base colour map (`paint: map`; by default pixel and dots patterns of a model
+  that bakes maps), so trims cost no triangles; lint W141 when a substantial part (15% of the model across, not a
+  thin blade) vanishes to the budget (others stay W111); a warning, not an error: which parts survive the budget can
+  differ between machines (#27) (#324).
+- Lint W136: a band, pixel or stripes pattern that paints nothing on its part; the docs say a pixel band's `at` is
+  from the part's own `at` (a lathe's origin) (#326).
+- Motif prints: `texture: { motif: { images, count, scale, rotate, seed } }` scatters multicolour stamps over a
+  seamless, seeded tile made in KILN (a floral shirt), tiled like any texture (#312).
+- Material `grain` and `grain_size` in a style: a fine bumpy finish in the normals (rough cloth, felt) without
+  geometry or triangles; a tiling noise normal map in KILN's Godot scenes, the same bumps in the previews (#329).
+- Named textures: `textures: { print: {...} }` at the top of a model, `texture: print` on each part; and
+  `project: triplanar` (box UVs in the glb; KILN's Godot scenes and the previews blend the three projections, so no
+  seam at a sleeve's side) (#320).
+- `kiln library <name>` prints a template's YAML; toy-proportioned templates `body_toy` and `head_toy` for
+  soft_toy characters (#188).
+- Garments: `collar: { style: band | open, height, depth, lapel }` (an open collar cuts a V and lays lapels on the
+  chest), `placket: { width, buttons, button_color }` down the front, V openings (`shape: v`), and `length:` for a
+  sleeve or trouser leg that runs along its limb and ends square and open (T-posed arms too) (#279).
+- `folds:` on a capsule or a tube run round its own axis (trouser legs, sleeves), and `bunch: true` stacks rings
+  along the axis (cloth bunched at an ankle); the compiled path has both (#315).
+- An `idle` cycle: breathing, a slow sway, the head glancing to either side, arms and elbows settling. KILN ships
+  KayKit's CC0 humanoid clips (26: idles, walks, runs, jumps, hits, deaths, throw, pick up): `kiln clips` lists
+  them, `kiln clips add` copies them with their licence into `imports/kaykit-animations/` (#150).
+
+### Fixed
+
+- The MCP server's instructions point at `kiln://docs/{topic}` (not the gone `kiln://reference`); a test checks every
+  `kiln://` URI it names is served (#159).
+- CI: the godot job and its long steps have timeouts (a hung render once ran 4 hours); a test checks the committed
+  demo says the package's version, so a release can't forget to rebuild it (#264, #254).
+- W122 is quiet when a blend_to id has a soft part to melt into, though its crisp details (eyes, teeth) are kept
+  apart (#152).
+- `kiln build <deleted model>` says its last glb and scene stay until a full `kiln build` removes them (#182).
+- `kiln new` writes the project palette's first colour where a template's colour isn't in the palette (#340).
+- A look's `ambient` above 0.9 now brightens Godot too (the sky's `energy_multiplier`; Godot ignores
+  `ambient_light_energy` while the sky gives all the ambient light): the skin and clay looks match their previews,
+  and both join the colour-parity grid (#350).
+- Reading a glb (references for `--vs`, imports): a skinned mesh ignores its node's transform, as glTF says; a model
+  compared against its own skinned, vertex-coloured build matches (#227).
+- See-through parts (`clear`, glass) are alpha-blended in software previews instead of dithered, so they read
+  as in the engine (#342).
+- Previews draw `tonemapper = "agx"` and `"aces"` with their own curves (close stand-ins), not as filmic (#337).
+- Pose sheets: bigger tiles when there are few frames (one pose up to 450 px), and the style's background (`--bg`)
+  as the other sheets have, so glows read on low-key looks (#322, #331).
+- `preview --closeup` honours `--views` and `--pitch` (#309).
+- `--frame-box`, `--at`, `--rotate` and `--pitch` take values starting with a minus (`--frame-box -0.25,...`) (#317).
+- Hard flat faces keep their own normal to every corner when their flat is clearly the biggest there (only bevel
+  bands blend), so long triangles across a flank no longer shade a diagonal crease; cavity shade on a sliver
+  triangle (a fan across a flat where parts rest) is evened out over it instead of streaking (#335).
+- Lint measures a scene with its instances placed (W108 size, W103 pieces joined by instances, the triangle line;
+  W110 holds the model's own parts to its budget); a scene may be instances only, without `parts:`; the docs say
+  `rotate` turns an instance about its origin before `at` (#333).
+- `kiln.api.offset()` moves mirrored parts as written-out pairs, a lathe's part-level `at` (not a second one), array
+  centres and decal centres (#172).
+- Scatter LODs of a model with a normal map (or colour map) keep their own maps instead of LOD 0's on their own
+  UVs (#259).
+- A part that fails to read no longer drags in rig E007 for its id; the docs say `sides` makes a part hard (#327).
+- `kiln.api.part(..., cut=True)` keeps `color` and `material` (they paint the cut's walls) (#344).
+- A cut accepts `id` and `mirror_id` (they name it; shared option sets in generators work) instead of E003; a
+  mirrored part's texture keeps its palette key (#153).
+- No raw numpy RuntimeWarnings in `kiln` output (lint workers too); degenerate hard normals are guarded (#339).
+- An instance's decals and textures come with it into the scene, turned with it (they were dropped); scaled
+  instances still leave them out. Shared meshes and maps through instances: #353 (#295).
+- Toon `outline_color = "darken"` previews take what Godot's outline takes: a glowing part's dimmed colour, vertex
+  colours and shade, and the colour map (#290, #292).
+- Godot variant scenes that recolour by the swap table cap and dim a recoloured glow as the glb does (standard and
+  toon), instead of keeping the source colour's strength (#288).
+- Small cut dots no longer vanish: the mesh refines down to the smallest dot, not the dot spacing (#283).
+- A `band` or `stripes` pattern with `frame: part` on a hard part painted nothing: it is cut along its planes in the
+  part's frame (#286).
+- Docs: textures over 256 px are filtered smoothly with mipmaps, uncapped; a cylindrical texture's v = 0 is at its
+  `at` (#321).
+- `band: { fit: ... }` round a surface that isn't round (a belt round hips and belly) hugs it as a fitted shell
+  instead of a cylinder sized to its farthest point (a flange at the back); `fit` takes a list of ids. Round ones
+  (barrels, posts) keep their exact hard ring (#316).
+- Lint W113 no longer flags intended overlaps with clothing: parts passing through a garment's hem, neck or
+  openings or an open shell's open side, and body parts another garment wraps (an arm through an armhole, the chest
+  under a sleeve) (#313).
+- The `wave` cycle on an arm with a forearm (humanoids) holds the upper arm out to the side and waves the forearm
+  from a bent elbow, whatever the rest pose, instead of raising the straight arm up by the head (#319).
+- `frames:` written on an animation instead of inside its `cycle:` now says where it goes (E008); the docs show it
+  inside the cycle (#318).
+
+### Changed
+
+- `kiln lint --fast` gives the warnings that need no mesh: W104, W109 and W121's missing map (#249).
+- W103 counts pieces that touch as one (a smooth detail on a hard part, hard parts face to face, an instance),
+  leaves out `separate: true` parts, and names the smallest floating piece and where it is (#173).
+- Error wording: a model without `name:` takes its file's name; `- { shape: sphere, ... }` shows the right form; a
+  part option written inside the shape (`bevel`, `scale`) and a shape field written beside it (`sides`) say where they
+  go; W101 says "other parts" (not "later"); W120 is quiet on all-hard models (#168, #190, #177).
+- Lint names parts as the model file has them: their `parts:` entry (before hardware expands), the kind written
+  (`garment shirt`, not the box it became), the id and the line; per-part warnings (W101, W102, W111, W128) about
+  more than three parts of one kind come as one line with the rest listed (#314, #235).
+- Lint W102 says how wide the part is at its thinnest and offers `hard: true` / `sides:` (for shapes that can be
+  exact) and `resolution:` besides making it thicker; W128 leads with `density` on the part and says how many
+  triangles each fix costs (#304, #323).
+- Under budget pressure hard parts lose their bevels a few at a time, the smallest first, after the chamfer step,
+  instead of all at once; lint W139 says when bevels went and what budget keeps them (#334).
+- UV charts in baked maps sit 8 texels apart as meant (they were 17: xatlas pads each side), so the maps hold more
+  detail; lint W121 and W133 use the bake's real texel size instead of assuming a half-full map (#257).
+- A model of hard parts only reports its hard part count instead of a mesh cell size in the lint and build
+  summaries, and lint `--json` lists no `cells` entry for it (#243).
+- The glow cap follows the look: divided by its `exposure`, and 1 (where it clips) instead of 0.75 under a linear
+  tone curve; previews cap per material from its flat colour, as the glb does; lint W138 for an emission above its
+  colour's cap (#290).
+- Lint W123 (the mesh dips under the ground) names the part that dips, where, and by how much, on that part's line
+  (#195).
+
+## [0.25.0] - 2026-11-13
+
+Iteration speed and the hero skin look (milestones 0.24 and 0.25; 0.24 was not released on its own). A colour or
+relief edit rebuilds from cache in under a second and a large model's lint is about twice as fast; relief by colour,
+new relief kinds and displacement; a part's own finer resolution; group posing; hand, foot and eye generators; colour
+fades per vertex; shade paint per texel; a fill light in the look kit (on in skin); lint W133-W135. Builds of models
+with relief, fades, shade paint or the skin style change (see Changed).
+
+### Added
+
+- `transforms:` turn and move a group of parts about a pivot (a hunched rest pose), rig pivots and sockets with
+  them; a mirrored part refuses a turn that breaks its mirror (E003) (#305).
+- A part's own `resolution:` (metres): the mesh inside its box is refined to that cell and moved onto the surface
+  along its normals, so a face gets its lids, nostrils and nose on a body meshed coarsely, without the whole model's
+  cells shrinking; pair it with `density` (#306).
+- Relief kinds `scales` (a round lobe), `feathers` (one point and a rib) and `shingles` (a straight edge) next to
+  `fur`; `flow: along` follows each part's own axis out from the body; `displace: true` moves the mesh out by the
+  layer, so tufts break the silhouette (the normals stay, so the map isn't counted twice); a model's LODs stamp its
+  full build's patches, so the pattern is the same at every level; lint W133: patches under four texels wide (#261).
+- Relief picks its faces by painted colour (`on_colors: [fur]`; alone: every smooth part in those colours) and leaves
+  ids bare (`except: [face, chest]`), so a bare chest or face that shares bones with the fur needs no extra bones
+  (#301). The docs list `kind: fur` (#307); folds, relief and colour fades moved to `kiln docs surfaces`.
+- `hand:` and `foot:` hardware: a soft hand (palm, curled tapered fingers, thumb, claws with their own colour) or
+  foot (sole standing on `at`, toes, heel) as ordinary parts that blend into the arm or leg (#310).
+- `eye:` hardware: a recessed eye (a socket cut into the face, a ball sunk in it, a thin rim lining the edge, flush
+  with the surface, optionally glowing) instead of a torus and a flattened ellipsoid that stand proud (#328).
+- `color_blend` without the baked maps: with `normal_map: 0` (or without `kiln-gen[bake]`) the fade goes in the
+  vertex colours (COLOR_0, `vertex_colors = true`), previews too; lint W134 when the project doesn't export vertex
+  colours (#262).
+- A fill light in the look kit: `[look] fill_energy`, `fill_pitch`, `fill_yaw` (default: opposite the sun),
+  `fill_color`; a second DirectionalLight3D without shadows in the look scene, and the same light in the previews
+  (parity tested in both renderers). On in the `skin` preset (0.3) (#275).
+- Lint W135: on a soft-skinned body, a limb fused to another branch at rest (an arm hanging into the belly, a leg
+  into the other leg) away from its joint, with how far to move it (#255).
+- `kiln build <models> --no-dependents`: the models that place them (instances) keep their last build (#343).
+
+### Fixed
+
+- Scatter-scene previews draw a placed relief (or colour-faded) model with its colour map, sampled at the corners,
+  instead of flat paint. Gibs of a relief model keep their fur and fades on a quarter-size map of their own instead
+  of flat colours (#349).
+- Where three colours meet, a `color_blend` fade no longer flips its target at the bisector: both other colours
+  mix in by their own distances, a third each at the corner (#262).
+- A paint border across a smooth blend (a bare belly into fur) drew a thin shading line: each side took its own
+  normal there, as at a real crease. Sides keep the surface's normal unless they turn more than 15 degrees from it.
+  And relief layers that meet (an upper arm's and a forearm's) no longer each fade out toward the other: the fade runs
+  to where the fur ends, so no bare band at the elbow (#302).
+- Relief no longer draws stepped streaks where the surface faces along the flow (the top of a round shoulder under
+  `flow: down`, the underside of a heel): there the flow can't lie in the surface, so the patches thin out and shrink
+  as they do toward an edge, instead of all pointing one fixed way (#303).
+- A lock's (and an ellipsoid's) distance ran short away from it, below the distance to its own box: the compiled
+  path then skipped it by its box where the numpy path still blended it in, so the two disagreed near many locks
+  (and numpy's answer depended on how points were batched). Outside its box such a part's distance is now never
+  under the box's, in both paths. Models with many locks may mesh slightly differently (#238).
+- `kiln preview --draft` on a model with part `density` and a budget above the draft mesh's face count stopped with
+  E009 (the simplifier refuses a target it is already under); it now leaves the mesh as it is (#299).
+
+### Changed
+
+- Shade paint on a model with a base colour map (relief, `color_blend`) is painted per texel into the map, from
+  the normal map's normals and each texel's occlusion, with the same strengths; its mapped faces carry no COLOR_0
+  multiplier any more (no double shading). Fine grooves and relief now shade too (#266).
+- The `skin` style's hero budget is 60k (was 20k): a close-up character with relief fur and a readable face (#311).
+- `kiln lint` prints the static findings first (a `static checks:` line pointing at `--fast`), then builds the
+  meshes for the rest; a long build ends with one line saying where its time went (`built in 156 s (meshing 12 s,
+  ..., baking maps 112 s)`). Full lint stays the default (#186).
+
+### Performance
+
+- A base colour map is written in 0.7 s instead of 1.6 s at 2048, with half the memory: the padding grows only
+  where it fills (the same bytes), float32 colours and an sRGB table (#349).
+- Parts with `folds` use the compiled distance too (they took the numpy path for every field pass: about 2x on a
+  model with one folded robe); the same values to 1e-9 (#281).
+- Joined hard parts are kept in the build cache every 8 joins; a rebuild resumes at the last unchanged one, so moving a
+  prop near the end of a scene joins again only from there (an 82-hard-part desk: 35 s cold, 9 s after moving one
+  part), with the same result as joining from the first part. Hard parts lose bevels for the budget only when they
+  need its smooth parts' share: that share now follows how much of the surface the smooth parts are (a movement's
+  few small pins no longer cost 36 hard parts their bevels) (#214).
+- A colour-only edit reuses the cached build, recoloured: part, pattern, relief and palette colours, as long as the
+  same parts share colours (the paint borders don't move). A 2.4 m hero's colour tweak goes from a full rebuild
+  (about 2.5 min) to seconds (#246).
+- Normal and colour maps bake about 45% faster (a 2.4 m relief-furred hero with 2048 maps: 285 -> 156 s for the
+  whole build): a texel is supersampled only where the surface turns away from the mesh (elsewhere its own normal is
+  as good; the map changes by 0.006 degrees on average), the charts are packed again without being cut again when
+  the atlas comes out too big, and a surface point already on the surface takes no second step. The bake has its own
+  progress line, `baking maps`; it ran on under `skinning`, which then looked stuck on its last part (#300).
+
+## [0.23.0] - 2026-11-12
+
+Look and features. Relief layers (fur as patches in baked maps), colour that fades across part borders, shade
+paint, part density, a skin style preset, garments, cloth folds, patterns (offsets, jittered dots, pixel motifs),
+per-copy decals, glow that keeps its hue, see-through materials, painted and scoped cuts, aim and two-bone IK in
+poses, gaits with bending knees and elbows, instances (models placed in a model), variant ramp swaps, and preview
+framing; toon previews now match Godot (toon models are darker in Godot: see Fixed). Most meshes with colour
+borders or decals change a little and every cached build is rebuilt once.
+
+### Added
+
+- `instances:` place other models in a model (a desk with its props), each its own build at its own detail, merged
+  in after the scene is built (`at` in the scene's model space, at the instance's origin; LODs build each instance at
+  the same share; a partial build rebuilds the models placing a rebuilt one). Shared meshes, instances' decals and
+  maps, and scenes with normal maps: #295 (#171).
+- Preview framing and light: `--tight` (each tile on what it shows), `--frame-box` (a region), `--fill` (a neutral
+  light from the camera, previews only), `--bg auto|light|dark` (auto: dark for dark-sky styles), `kiln lineup
+  --pitch`; `--closeup NUMBER` documented (a part's place in `parts:`) (#180, #203, #212).
+- `cut: [ids]`: a cut names the parts it cuts. Those parts are meshed as their own surface, so the cut keeps to
+  them in one model too (before, `cut: <id>` only held for separate or fitted parts: elsewhere it cut everything
+  before it); they are split off only where the cut also reaches parts it doesn't name (#209).
+- A cut can take `color` (and `material`): the walls it makes are painted, smooth and hard parts alike (inked
+  grooves, panel lines) (#178).
+- See-through materials: a preset's `alpha` (0.05-1; glTF BLEND, Godot transparency, the toon shader too, kept by
+  variant recolours; previews dither it) and a `clear` preset in the built-in styles (`glass` stays opaque, so
+  existing models don't change). Lint W131: see-through parts in an atlas project are drawn opaque (#175).
+- Poses point parts at model-space points: `aim: [x, y, z]`, and two-bone IK `reach: [x, y, z]` (`pole:` for the
+  middle joint) on an upper arm or thigh; `kiln preview --pose --json` gives each part's end per frame (`ends`)
+  (#200); lint W132: `reach` on a part without exactly one child. The manifest's `start` poses now come from the
+  solved frames (with the skeleton, as the glb).
+- Variants swap whole palette ramps, shade for shade: `swap: { robes: golds }` (the palette's `ramps:`, same length;
+  colour entries win over ramps; a shade two ramps share is swapped only when named). Lint W130 (and
+  `kiln preview --variant`) names colours a variant leaves that go with one it swaps: the same ramp, or close in hue;
+  `skin: skin` keeps one quietly (#205).
+- `emission:` on a part: its own glow strength over its material preset's (#202).
+- Decals: `per_copy: true` on an arrayed part puts the decal on every copy (sharing one texture in the glb), and
+  `texel` (metres per image pixel) sizes a decal from its image instead of `size` (#211).
+- `pixel` pattern: a pixel motif (`rows` of `#` and `.`, or a small PNG) tiled round a part's own axis in a band,
+  `size` metres per cell, `repeat` times round or `auto` (about square cells): Greek keys, zigzags and checks round
+  hat bands, hems and cuffs, cut into the mesh crisply, reading left to right like cylindrical textures. Smooth parts
+  only (#198).
+- Patterns: `offset: [x, y, z]` shifts stripes, checks and dots; dots take `jitter` (each dot moved up to half that
+  of a cell each way) and `vary` (its size by up to that share), random per cell from `seed` (default: the pattern's
+  place in the list), for speckles and scattered spots; with `frame: part`, mirror sides and array copies scatter
+  alike. A second, third... `dots` pattern in a list without its own `offset` sits at its own place in the cell (they
+  fell exactly under the first and never showed) (#194).
+- `folds: { count, depth, from_y, to_y, sharp }` on a part: cloth folds round its own y axis, deepest at the hem and
+  fading out higher up (robes, skirts, capes), as real shape (#204).
+- `garment` hardware: a layer of clothing fitted to earlier parts (a shell `gap` off their surface between `from_y`
+  and `to_y`, open at the hem and neck), with an optional thicker `hem` band and `openings` cut through it alone
+  (mirrored with the garment). A fitted shell may now wrap an earlier fitted shell (a shirt over trousers) and parts of
+  its own id (a sleeve on the arm's bone, which then moves with the arm) (#193).
+- The `skin` style preset: stylised game skins with matte materials, colours that fade where parts blend, shade paint
+  (darker crevices and undersides) and a soft look kit; fur as relief and face `density` in its notes and worked
+  example (`kiln docs styles`) (#233).
+- `[shape] color_blend` in a style: every smooth part that blends into a part of another colour (and doesn't set its
+  own, and isn't made hard) fades its colour that far into its neighbours'; the baked colour map comes on for such
+  models (not without `kiln-gen[bake]`). A part's `color_blend: 0` keeps its borders crisp from both sides. W127 only
+  for a part's own color_blend (#262).
+- `skin_falloff` on a part (soft skins): the surface painted as its bone follows that bone alone away from its colour
+  border (`0`), or fades over to it within that many metres; the border stays blended. A sleeve blended into the
+  chest no longer smears down the torso when the arm moves. Without it, weights are as before. Lint W129 when it
+  does nothing (a rigid skin, or a hard, kept, separate or cutting part) (#192).
+- `run` and `sneak` cycles: a faster walk leaning forward, and a crouched walk (thighs forward, knees bent, the body
+  lowered and leaning) (#150).
+- `smooth: true` on tubes and locks: a centripetal Catmull-Rom curve through the points (8 straight pieces per span,
+  3 for hard parts; through every point, no loops on uneven spacing; a closed path, first point = last, wraps
+  round) instead of straight lines between them. A wave is five points,
+  not thirteen. Without it the path is straight between points, as before (now documented) (#179).
+- `on: { part, near }` on a part: placed on the blended surface of earlier parts (those ids, blends, fitted shells
+  and earlier cuts included; detail parts not) where a walk from `near` along the field settles (start just outside
+  the spot), its y axis along the surface normal, then `offset` along the normal and `roll` about it (`align: false`
+  only moves it). Fur clumps, straps, scales and spikes no longer need the body's field worked out by hand;
+  `mirror_id` twins and `mirror` follow; not with `array` or hardware parts (#149).
+- Lint W128: a round soft part (sphere, ellipsoid, capsule, torus) that shows at least half of its surface on
+  fewer than 48 triangles per copy reads as a polygon. A prop of many small parts shares one class budget; the
+  warning gives the `density` and the `budget:` that would lift it to 48 (#167).
+- `density` on a part: its weight on the triangle budget (0.25 to 8, default 1). Faces are classed by the density
+  of the part they're on; each class gets what a plain reduction to the budget would give it, x its density, at the
+  same total (a face at 3 gets about three times the share it had), reduced on its own with its border locked and
+  welded back (no paint border, no shading crease). A class can't go past its full-resolution mesh: the shaping pass
+  keeps the max density x its usual triangles. Hard and kept parts ignore it. Without `density` meshes are unchanged
+  (#232).
+- Shade paint: `shade: { cavity, top, under }` on a model, or `[shade]` in a style (the model's fields go over the
+  style's): darker in crevices (`cavity` x the occlusion `atlas_ao` uses), the top keeps its colour while the rest
+  darkens towards the bottom (`top`), the underside darker still (`under`). It is one grey multiplier per vertex corner in
+  COLOR_0 in every colour mode (per-colour materials, vertex colours, the atlas, colour maps), shown by previews and
+  Godot alike; manifest `shade` on the model. `top` is relative (vertex colours can't go above 1). With the atlas,
+  `atlas_ao` is a cavity strength (with both, the larger). Off by default: output is unchanged without it (#231).
+- `color_blend` on a part: its colour fades into its neighbours' over that distance either side of their border
+  (mixed in OKLab, half and half on the border), instead of meeting in a crisp line. The fade is painted in the base
+  colour map (`<name>.color.png`, which comes on for the model as it does for relief); the mesh is unchanged, and
+  without `color_blend` so is all output. A border fades where the later part joins with a `blend` (a nose set on
+  with a crisp seam stays sharp); hard and glowing parts and decals stay crisp; lint W127 says when a `color_blend`
+  fades nothing. The demo cub's belly and muzzle use it (#230).
+- Relief layers: fur as patches in the baked maps, not parts. `relief:` on a model scatters shallow, overlapping,
+  flame-tipped patches over the parts it names (`on`, `length`, `width`, `lift`, `density`, `flow`, `tips`, `jitter`,
+  `color`/`color_to`, `under`, `fade`, `seed`). They tilt the baked normal map and are painted into a new base colour
+  map on the same UVs (`<name>.color.png`: each patch lighter toward its tip, the surface darker just under it), so a
+  furry character is a handful of blended parts and builds in seconds, with nothing added to the mesh. Previews and
+  the Godot scenes (standard and toon) show both maps; variants get their own colour map; the manifest has
+  `color_map`. Patches stay on the parts a layer names (eyes, noses, hard and glowing parts next to them stay clean);
+  lint W126 says when a layer has no surface to lie on. The demo has a cub (#229).
+- A model can have a baked normal map and baked ambient occlusion together. In a project with `atlas = true`, a model
+  with `normal_map:` is no longer a lint error: it keeps a material per colour (the palette atlas and the normal
+  map both need the first UV set), carries its normal map, and gets `atlas_ao`'s occlusion in its vertex colours
+  like the atlas models. Its variants recolour materials as they do without the atlas. Its manifest entry has
+  `ao` and `ao_strength` and no `atlas` (#148).
+- Lint W125: the mesh's UV charts don't fit the normal map (many separate pieces in a small map, where the padding
+  between charts alone fills it). The packer now stops trying when the atlas stops shrinking and squeezes its
+  smallest try into the map; the warning says by how much and what size to ask for.
+
+### Changed
+
+- Docs (making): when to choose hard parts (mechanical props: flat faces, holes), and how toy metal picks up the
+  ground's colour and how to get cool cartoon steel (#176).
+- Glowing colours keep their hue: a glowing material's strength is capped per colour (its brightest channel x
+  strength at most 0.75; past it Godot's tone curve bends the hue) and its lit base colour is dimmed (x 0.3), in the
+  glb, the atlas (variants included) and the previews.
+  A pale pink at glow 2 rendered white in Godot and previews; now it stays pink (#202).
+- Decal cuts snap values within 1e-6 of a cut line onto it (no near-twin vertices beside a cut point); decal
+  meshes may change slightly; cached builds are rebuilt once (#211).
+- `kiln docs parts` split in two: `parts` (shapes and part options) and `surfaces` (hard surfaces, hardware, patterns,
+  decals, textures). The topic had hit its size budget; the details cut to fit it are back (#270).
+
+### Performance
+
+- Hard parts join faster: a BSP node tests each polygon's box (made once, carried down the tree) against its plane
+  in one numpy pass and splits only the polygons the plane crosses; output is the same polygon for polygon. The
+  82-hard-part desk scene's hard pass 47 -> 28 s (#214).
+
+### Fixed
+
+- Toon: `kiln preview` and Godot agree (#183). The Godot toon shader took the sun at PI x its strength (Godot's
+  `LIGHT_COLOR` carries a PI for PBR's divide), so toon bands came out washed and clipped (gold went yellow); they
+  now light as the preview and the standard shader do. **Toon models are darker in Godot than before**: the
+  palette as written. The preview's outlines are the inverted hull Godot draws (outward only, the set width), not
+  a line twice as wide across each edge. Engine parity mean OKLab gap 0.16 -> 0.03.
+- A decal on a part with a `gradient` or `pattern` also cut and marked other parts' faces painted in the same colours
+  (their band and stripe colours are shared): it now keeps to the faces nearest its own part (#146).
+- Colour borders along blends zigzagged at lower budgets (a sawtooth on a sleeve's edge from about 1200 triangles
+  down): thinning a border to the budget left its vertices either side of it. Each vertex where two plain colours meet
+  now goes back onto the exact border after reducing (along the surface, at most half an edge). And a decal that wraps
+  round a side ended on whole triangles (a stepped edge): it is cut along where the surface turns away too, within
+  its rectangle and on smooth surfaces (a hard part's flat faces: their own normal decides). Meshes with colour
+  borders or decals change a little; cached builds are rebuilt once (#191).
+- The built-in walk on a humanoid (`skeleton: humanoid`) moved only the hips: its legs and arms default to
+  upperleg/upperarm now, its knees and elbows bend (knees fold while the leg swings forward), its feet stay level,
+  and the body rides so the planted foot stays on the ground. Listing `legs:` / `arms:` keeps the humanoid defaults
+  off; other models bend what `knees:` / `elbows:` name. `wave` on a humanoid raises upperarm_r (it turned the whole
+  model). A model without lower limbs and without the humanoid skeleton walks as before. Cached builds are rebuilt
+  once (#150).
+- `normal_map: 2048` wrote a 2140x2138 texture: the packer's atlas came out up to 10% over the size asked for and
+  was written as it was. The map is now exactly the size asked for, square, with the charts and their padding
+  inside it (packed again at a lower texel density until they fit). Texel density changes with it: about 20% lower
+  at 256 and 512, where the old maps overshot most, and a few per cent higher from 1024 up. Cached builds with a
+  normal map are rebuilt once (#151).
+
+## [0.22.0] - 2026-11-11
+
+Speed and the iteration loop. Built output is the same as 0.21.0's except: the generator string in every glb and
+the manifest; meshes of models with patterns or gradients, which can move by rounding (30 vertices of a 26k-triangle
+character, see Performance). Mesh caches from earlier versions are rebuilt once.
+
+### Added
+
+- `kiln preview <model> --draft` (#222): a quick look while shapes and placement are still moving. Mesh cells 3 times
+  coarser, each face in its nearest part's colour (no borders cut, no patterns on smooth parts), hard parts without
+  bevels and made once, one reducing pass, no normal map or baked occlusion. A 536-part character: 14 s (its build:
+  about 290 s); a 23-part one: 5 s; an 82-hard-part scene: 21 s (80 s). Sheets go to `previews/<model>/draft/`, each stamped
+  DRAFT (`--json`: `draft: true`; its triangle count is not the build's); drafts have their own cache. Not with
+  `--engine`, `--vs`, `--fit` or `--effect`, nor for terrains, scatters and imported models. The MCP `preview` tool
+  takes `draft` too.
+- Long builds say how far they are and roughly how long is left in each phase (meshing samples, painting, reducing
+  passes, skinning), the heartbeat counting it down; a phase projected past 2 minutes says so at once with what would
+  make it faster, and a model with 100 or more parts prints every phase line at once (#221).
+- `kiln lint` and `kiln build` say each meshed model's cell size and what set it: the model's or the style's
+  resolution, the size scaling (`scale_with_size`), a `max_cells` cap (#223). Long builds' meshing phase line says it
+  too; `kiln lint --json` has it under `cells`.
+
+### Changed
+
+- Docs: `kiln docs build` has a "What things cost" section (measured build times for cell size, budget, normal map,
+  noise, part count, gradients and patterns, hard parts); `kiln docs parts` says that the copy of a part with
+  `mirror_id` melts into the mirrored ids of its `blend_to` (one side is enough there; a plain `mirror` part still
+  names both) (#224).
+- `kiln lint --fast` says in its summary which findings it didn't look for (those that need the built model: E009,
+  E013 and most warnings; `--json`: `geometry: false`); the lint topic lists them and says how fast lint, plain lint
+  and the build's lint relate (#186, #210).
+- Build progress: joining hard parts is its own phase (`joining 82 hard parts`, then solids joined of the total over
+  all pieces, cuts included, and time left, estimated for a cost that grows with the square of the count) instead of
+  running under `meshing`; a detail level made again over budget says so. The meshing line counts the adding parts
+  meshed there (not hard parts, not cuts), and a model of hard parts only no longer says `meshing ...` and
+  `meshed at ...: 0 triangles` (#174).
 - The vendored PAGAN pieces are Apache 2.0 like the rest of KILN (same author); the separate MIT file is gone.
+
+### Performance
+
+- Animation, variant and comment edits no longer rebuild the meshes (#185, #199): the mesh cache follows the fields a
+  mesh, its paint and its skin come from, not the model's whole text. After an animation edit only the tracks are
+  sampled again on the cached skeleton; variants, `description`, `tags`, `status`, comments and layout change nothing
+  built. A 23-part soft-skinned character after a pose edit: `kiln build` in 4 s instead of 18, the glb identical to
+  a full rebuild's. (Caches written by earlier versions are rebuilt once.)
+- Joining hard parts is 2-3.5x faster on scenes of many hard parts (#214): a solid's BSP tree is made only where a clip
+  reaches it, not whole for every join (joining a small part to a big solid reaches the few planes near the part),
+  and planes a whole batch of polygons lies clear of are passed without a test per polygon. An 82-hard-part desk
+  scene: 187 -> 54 s; the same desk modelled with 30 of its 110 parts smooth: 177 -> 80 s; a 94-part character with
+  hard props: 55 -> 46 s; nothing to speak of on models of mostly smooth parts (the 536-part character stays at
+  about 290 s). Output is
+  byte-identical (the demo and five larger models): the same planes cut the same polygons. The joining phase's time
+  left is now estimated as linear in the joins done.
+- A look-only style edit no longer rebuilds the meshes (#174): the mesh cache follows a style's `[shape]` and
+  the triangle budget that applies to the model (not the whole `[budgets]` table), not its `[look]`, `[materials]`,
+  description or notes; the cached build is exported with the style as
+  it is now. A 23-part character after an `exposure` or material edit: `kiln build` in 4 s instead of 18. (Caches
+  written by earlier versions are rebuilt once.)
+- Reducing is a little faster (#199): the nearest part of every vertex is found in one compiled pass instead of one
+  pass per part (a 94-part character: 2.7 -> 0.3 s), and the colour-border simplifier does its fold test in plain
+  floats instead of numpy on a handful of points (6 -> 1.8 s). The 536-part character's build: 310 -> about 290 s.
+  Output is byte-identical (the demo and five larger models). What is left of "reducing" on models with hard parts is
+  mostly the hard parts' union (#214); reduced meshes cached on geometry alone come with #185.
+- Painting many-part models is about 3x faster (#154): small point sets (a split's new vertices, one part's
+  distance at a few hundred points) run the compiled kernels on one thread (a parallel call cost ~3 ms however small),
+  and the whole field is compiled at any size instead of looping every part in Python below 64 points. The 536-part
+  character's lint: 838 -> 370 s; with a gradient on each of its 481 locks: 1231 -> 672 s (painting patterns 805 ->
+  224 s). Meshes of models with patterns or gradients can move by rounding (the compiled and numpy distances agree to
+  ~1e-15, which can flip a decimation choice): on a 26k-triangle character, 30 vertices moved; the demo is byte-identical.
+- Distance fields with many `blend_to` parts no longer cost quadratically in their number (#220; since #116): a part out of reach is skipped without working out
+  its targets' union (it can't change the field whatever that is), and the compiled kernel keeps that cache per chunk
+  of points instead of allocating it per point. A 536-part character (478 fur locks, each melting into its own set of
+  earlier parts) costs 7.6 us per point instead of 388, and its lint goes from over an hour to 14 minutes. Output is
+  byte-identical.
+
+### Fixed
+
+- Thin parts the simplifier collapses away entirely (a ball with 120 thin locks at a low budget) no longer fail the
+  build with "'list' argument must have no negative elements" (#144): they are dropped, and each is reported as W111.
 
 ## [0.21.0] - 2026-11-09
 
@@ -716,7 +1281,14 @@ First release.
   MCP server (`kiln[mcp]`), Python API for generator scripts, Claude skill.
 - Demo project (toy airline + toy siege) and a Godot 4.7 showcase.
 
-[Unreleased]: https://github.com/lukasgolino/kiln/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/lukasgolino/kiln/compare/v0.35.0...HEAD
+[0.35.0]: https://github.com/lukasgolino/kiln/compare/v0.34.0...v0.35.0
+[0.34.0]: https://github.com/lukasgolino/kiln/compare/v0.33.1...v0.34.0
+[0.33.1]: https://github.com/lukasgolino/kiln/compare/v0.33.0...v0.33.1
+[0.33.0]: https://github.com/lukasgolino/kiln/compare/v0.32.0...v0.33.0
+[0.32.0]: https://github.com/lukasgolino/kiln/compare/v0.31.0...v0.32.0
+[0.23.0]: https://github.com/lukasgolino/kiln/compare/v0.22.0...v0.23.0
+[0.22.0]: https://github.com/lukasgolino/kiln/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/lukasgolino/kiln/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/lukasgolino/kiln/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/lukasgolino/kiln/compare/v0.18.0...v0.19.0

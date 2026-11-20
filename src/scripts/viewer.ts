@@ -63,6 +63,7 @@ const TONEMAPPERS: Record<string, ToneMapping> = {
   agx: AgXToneMapping,
 };
 
+const VIEW = new Vector3(0.45, 0.32, 1).normalize(); // where the camera starts, from the model's centre
 const loader = new GLTFLoader();
 const cache = new Map<string, Promise<{ scene: Object3D; animations: AnimationClip[] }>>();
 
@@ -70,8 +71,37 @@ export const base = () => document.documentElement.dataset.base ?? "/";
 export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function load(url: string) {
-  if (!cache.has(url)) cache.set(url, loader.loadAsync(url));
+  if (!cache.has(url)) {
+    const loading = loader.loadAsync(url);
+    cache.set(url, loading);
+    loading.catch(() => cache.delete(url)); // a failed load is tried again on the next pick
+  }
   return cache.get(url)!;
+}
+
+/** Frees a loaded model's GPU memory and forgets it (the browser's HTTP cache still has the file). */
+function unload(url: string) {
+  const loaded = cache.get(url);
+  cache.delete(url);
+  loaded
+    ?.then(({ scene }) =>
+      scene.traverse((o: any) => {
+        if (!o.isMesh) return;
+        o.geometry.dispose();
+        for (const m of [o.userData.original ?? o.material].flat()) {
+          for (const map of [m.map, m.normalMap, m.emissiveMap, m.roughnessMap, m.metalnessMap, m.aoMap]) map?.dispose();
+          m.dispose();
+        }
+      }),
+    )
+    .catch(() => {});
+}
+
+export interface ViewerOptions {
+  /** Frame the model on its height and turning width (wide stages), not on its bounding sphere. */
+  tight?: boolean;
+  /** Keep only the model on show in memory (big models); others stay cached for instant switching. */
+  single?: boolean;
 }
 
 function bands(n: number): DataTexture {
@@ -100,10 +130,11 @@ export class Viewer {
   private look: Look | null = null;
   private visible = false;
   private request = 0;
+  private url: string | null = null;
   playing = !reducedMotion();
   onClips: (names: string[]) => void = () => {};
 
-  constructor(private host: HTMLElement) {
+  constructor(private host: HTMLElement, private options: ViewerOptions = {}) {
     this.renderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
@@ -147,10 +178,20 @@ export class Viewer {
   /** Show `url` with `look`; `anim` (a KILN animation name) plays if present, else the first loop. */
   async show(url: string, look: Look, anim?: string) {
     const ticket = ++this.request;
-    const gltf = await load(url);
+    this.host.dataset.state = "loading"; // the stage's own CSS shows it (and "failed")
+    let gltf: Awaited<ReturnType<typeof load>>;
+    try {
+      gltf = await load(url);
+    } catch {
+      if (ticket === this.request) this.host.dataset.state = "failed";
+      return;
+    }
     if (ticket !== this.request) return;
+    this.host.dataset.state = "ready";
     if (this.model) this.scene.remove(this.model);
     this.mixer?.stopAllAction();
+    if (this.options.single && this.url && this.url !== url) unload(this.url);
+    this.url = url;
     const model = clone(gltf.scene);
     this.model = model;
     this.scene.add(model);
@@ -217,10 +258,19 @@ export class Viewer {
     const box = new Box3().setFromObject(model);
     const size = box.getSize(new Vector3());
     const centre = box.getCenter(new Vector3());
+    const half = ((this.camera.fov / 2) * Math.PI) / 180;
     const radius = size.length() * 0.48; // the bounding sphere, a little tight: corners rarely all face the camera
-    const dist = radius / Math.sin(((this.camera.fov / 2) * Math.PI) / 180);
+    let dist = radius / Math.sin(half);
+    if (this.options.tight) {
+      // far enough for the cylinder it sweeps while turning: its width across the stage, and its height as seen from
+      // the camera's elevation (the near rim of its base drops below the centre's line of sight)
+      const turning = Math.hypot(size.x, size.z) / 2;
+      const up = Math.asin(VIEW.y);
+      const tall = (size.y / 2) * Math.cos(up) + turning * Math.sin(up);
+      dist = (Math.max(tall, turning / this.camera.aspect) / Math.tan(half)) * 1.08 + turning;
+    }
     this.controls.target.copy(centre);
-    this.camera.position.copy(centre).add(new Vector3(0.45, 0.32, 1).normalize().multiplyScalar(dist));
+    this.camera.position.copy(centre).add(VIEW.clone().multiplyScalar(dist));
     this.camera.near = dist / 20;
     this.camera.far = dist * 6;
     this.camera.updateProjectionMatrix();

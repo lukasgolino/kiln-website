@@ -11,8 +11,11 @@ You check your work by LOOKING at the previews. This page is the core. Everythin
 | Topic | When |
 |---|---|
 | `setup` | a new project, what to ask the owner, `kiln.toml` and the layout |
-| `making` | the full model loop and the model file |
+| `making` | the full model loop and the model file (fur, folds and colour fades: `surfaces`; fur as `relief:` layers, never clump parts) |
 | `parts` | every shape and part field (read before writing parts) |
+| `surfaces` | hard surfaces, hardware (rivets, bands, planks, garments, hands, eyes), patterns, folds, relief fur, colour fades |
+| `scenes` | instances (other models placed in a model, shared meshes, references), assemblies (`mount:`), `kiln fit` |
+| `textures` | decals, textures (named, triplanar), motif prints, palette-indexed and generated pixel art |
 | `rigs`, `animations`, `humanoids`, `templates` | characters: rigs, skins, cycles, CC0 clips, the template library |
 | `styles` | presets, inspirations, the look kit |
 | `build` | glb, Godot scenes, look kits, colour modes, the manifest, what to report |
@@ -38,7 +41,9 @@ y = 0**. Angles are degrees. Colours are palette names.
    W106 not on the ground, W108 size wrong for the class).
 6. **Look:** `kiln preview <name>` (turntable: 8 sides x below / eye level / above), `--closeup <part>` for faces
    and hit zones, `--pose <animation>` for animations, `kiln lineup` against the rest of the set. You will
-   misjudge proportions without looking. Iterate until it's right.
+   misjudge proportions without looking. Iterate until it's right. While shapes and placement are still moving,
+   `kiln preview <name> --draft` is the quick look (seconds, even on models that build in minutes; rough surface
+   and colour edges); check the real preview before reporting.
 7. Report to the owner with the preview paths (and triangles if relevant). On approval: `kiln mark <name>
    --approved`, tick it in BRIEF.md, `kiln build` (`build` for what to tell the game side).
 
