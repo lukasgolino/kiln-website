@@ -5,7 +5,7 @@ a model, and keep it up to date. `kiln status` lists what exists; this file says
 
 ## What it is for
 
-- **Where it is shown:** the KILN website's hero section, beside the creature showpieces. The gallery in `art/demo`
+- **Where it is shown:** the KILN website's Showpieces section, beside the creature showpieces. The gallery in `art/demo`
   is nine simple toy models; these two show what the hard-surface side of the notation does at high detail.
 - **How it is shown:** a browser loads each `.glb` with three.js and the standard glTF material: one material per
   colour and preset (base colour, roughness, metalness), shade paint in the vertex colours. The viewer lights it

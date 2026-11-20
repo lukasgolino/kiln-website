@@ -19,7 +19,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from gen import P, arc, circle, lettering, plate_x, plate_z, r4, rrect  # noqa: E402
+from gen import P, circle, lettering, plate_x, plate_z, r4, rrect  # noqa: E402
 
 from kiln.api import model, write_model  # noqa: E402
 
@@ -388,7 +388,7 @@ for side in (1, -1):
     rivets("iron", "iron", V, 9, size=0.018, along=[[side * 0.45, roof_y(0.45, ROOF_R + 0.03) + 0.012, -1.22], [side * 0.45, roof_y(0.45, ROOF_R + 0.03) + 0.012, -0.43]])
     for z in (1.3, 0.96):
         rivets("steel_bright", "steel", V, 8, size=0.02, around={"center": [side * CYL_X, AXLE_Y, z + (0.003 if z > 1 else -0.003)], "radius": 0.098, "axis": "z"})
-for z, face in ((1.522, 1), (-1.522, -1)):
+for z in (1.522, -1.522):
     for y in (0.6, 0.8):
         rivets("red", "paint", V, 12, size=0.024, along=[[-0.64, y, z], [0.64, y, z]])
 rivets("green", "paint", V, 18, along=[[-0.62, 1.29, -1.45], [0.62, 1.29, -1.45]])

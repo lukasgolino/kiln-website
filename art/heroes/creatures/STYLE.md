@@ -23,9 +23,9 @@ by `kiln style show`) holds the numbers; this file holds the words and the histo
   spines on the dragon, gold eyes on the owl). Repeated parts run from a darker root to a lighter tip (`gradient`),
   so every row reads as a row.
 - **Materials:** everything matte, except eyes (roughness 0.12), claws, teeth and horn (0.35 to 0.45).
-- **Lighting:** none of ours. The models are shown in a browser through the standard glTF material, so the look
-  comes from geometry, vertex and map colour, shade paint and the baked normal map. Previews use the `skin`
-  preset's soft light; that light is not part of the look.
+- **Lighting:** the `skin` preset's soft light, unchanged: the site's viewer sets its sky, ground and sun from this
+  style's resolved look, and previews use the same. The models are shown through the standard glTF material, so the
+  rest of the look comes from geometry, vertex and map colour, shade paint and the baked normal map.
 
 ## Rules
 

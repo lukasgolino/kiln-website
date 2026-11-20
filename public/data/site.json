@@ -866,7 +866,7 @@
     "height": 2.04,
     "parts": 29,
     "triangles": 69458,
-    "bytes": 6560256,
+    "bytes": 6560408,
     "maps": [
      "color_map",
      "normal_map"
@@ -892,7 +892,7 @@
     "height": 0.71,
     "parts": 15,
     "triangles": 56940,
-    "bytes": 5798256,
+    "bytes": 5798408,
     "maps": [
      "color_map",
      "normal_map"

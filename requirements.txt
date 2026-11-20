@@ -1,2 +1,4 @@
 # The KILN release the site art is built with. Bump the version, rerun tools/build_site_assets.py, commit.
 kiln-gen[fast,bake]==0.35.0
+# Encodes the showpieces' WebP maps: pinned so a rebuild writes the same bytes.
+Pillow==13.0.0

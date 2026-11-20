@@ -5,13 +5,13 @@ a model, and keep it up to date. `kiln status` lists what exists; this file says
 
 ## What it is for
 
-- **Where it is shown:** the KILN website's hero section. The gallery in `art/demo` is nine simple toy models; these
+- **Where it is shown:** the KILN website's Showpieces section, under the hero. The gallery in `art/demo` is nine simple toy models; these
   two are the showpieces for what the notation does at high detail.
 - **How it is shown:** a browser loads each `.glb` with three.js and the standard glTF material: per-colour
   materials, a base colour map and a normal map. No custom shaders and no look kit, so everything has to be in the
   geometry, the colours and the baked maps.
-- **Camera:** an orbiting close-up. The visitor turns the model and zooms to the face, so faces, feet and the rows of
-  scales and feathers have to hold up at close range.
+- **Camera:** the visitor turns the model on a wide stage (no zoom), so faces, feet and the rows of scales and
+  feathers have to hold up from every side.
 - **Style:** `showpiece` (see STYLE.md).
 - **Limits per model:** 40 000 to 90 000 triangles, a glb under 5 MB, `export = ["glb"]` only, no lint errors.
 - **Originals:** both creatures are our own designs. They recreate no existing character.
